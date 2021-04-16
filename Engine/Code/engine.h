@@ -42,6 +42,26 @@ enum Mode
     Mode_Count
 };
 
+struct OpenGLInfo
+{
+    bool show = false;
+    const GLubyte* version = nullptr;
+    const GLubyte* renderer = nullptr;
+    const GLubyte* vendor = nullptr;
+    const GLubyte* shadingLanguageVersion = nullptr;
+    const const unsigned char* extensions = nullptr;
+    OpenGLInfo()
+    {
+
+    }
+};
+
+struct VertexV3V2
+{
+    glm::vec3 pos;
+    glm::vec2 uv;
+};
+
 struct App
 {
     // Loop
@@ -83,6 +103,8 @@ struct App
 
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
+
+    OpenGLInfo oglInfo;
 };
 
 void Init(App* app);
