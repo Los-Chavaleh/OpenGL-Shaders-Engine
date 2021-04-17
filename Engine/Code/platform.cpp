@@ -116,6 +116,8 @@ void OnGlfwCloseWindow(GLFWwindow* window)
 
 int main()
 {
+	ShowWindow(GetConsoleWindow(), SW_HIDE); // Hide console
+
     App app         = {};
     app.deltaTime   = 1.0f/60.0f;
     app.displaySize = ivec2(WINDOW_WIDTH, WINDOW_HEIGHT);
