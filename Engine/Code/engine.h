@@ -132,6 +132,24 @@ struct Material
     u32         bumpTextureIdx;
 };
 
+struct Camera {
+    float distanceToOrigin = 2.f;
+    float fov = 60.f;
+    glm::mat4 projectionMat;
+    glm::mat4 viewMat;
+    vec3 position = { 5.f, 5.f, 5.f };
+    void CalculateProjectionMatrix(const vec2& size)
+    {
+        float aspectRatio = size.x / size.y;
+        projectionMat = glm::perspective(glm::radians(fov), aspectRatio, 0.1f, 100.f);
+    }
+
+    void CalculateViewMatrix()
+    {
+        viewMat = glm::lookAt(position, vec3(0.f), vec3(0.f, 1.f, 0.f));
+    }
+};
+
 struct App
 {
     // Loop
@@ -175,11 +193,15 @@ struct App
     // Location of the texture uniform in the textured quad shader
     GLuint programUniformTexture;
     GLuint texturedMeshProgram_uTexture;
+    GLuint texturedMeshProgram_uViewProjection;
+    GLuint texturedMeshProgram_uWorldMatrix;
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
 
     // GPU Info
     OpenGLInfo oglInfo;
+
+    Camera camera;
 };
 
 u32 LoadTexture2D(App* app, const char* filepath);

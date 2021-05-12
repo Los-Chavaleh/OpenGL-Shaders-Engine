@@ -39,23 +39,28 @@ void main() {
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
 layout(location=0) in vec3 aPosition;
+layout(location=1) in vec3 aNormals;
 layout(location=2) in vec2 aTexCoord;
 
+uniform mat4 uWorldMatrix;
+uniform mat4 uWorldViewProjectionMatrix;
+
 out vec2 vTexCoord;
+out vec3 vNormals;
 
 void main() {
-    vTexCoord = aTexCoord;
 
     float clippingScale = 5.0;
 
-    gl_Position = vec4(aPosition, clippingScale);
-
-    gl_Position.z = -gl_Position.z;
+    gl_Position = uWorldViewProjectionMatrix * vec4(aPosition, clippingScale);
+    vTexCoord = aTexCoord;
+    vNormals = aNormals;
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
 in vec2 vTexCoord;
+in vec3 vNormals;
 
 uniform sampler2D uTexture;
 
@@ -63,6 +68,7 @@ layout(location = 0) out vec4 oColor;
 
 void main() {
     oColor = texture(uTexture, vTexCoord);
+    oColor = vec4(vNormals, 1.0);
 }
 
 #endif
