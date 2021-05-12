@@ -6,6 +6,8 @@
 
 #include "platform.h"
 #include <glad/glad.h>
+#include "assimp_model_loading.h"
+
 
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
@@ -164,7 +166,7 @@ struct App
     u32 model;
     // Mode
     Mode mode;
-
+    
     // Embedded geometry (in-editor simple meshes such as
     // a screen filling quad, a cube, a sphere...)
     GLuint embeddedVertices;
@@ -179,6 +181,8 @@ struct App
     // GPU Info
     OpenGLInfo oglInfo;
 };
+
+u32 LoadTexture2D(App* app, const char* filepath);
 
 void Init(App* app);
 
