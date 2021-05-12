@@ -7,7 +7,7 @@
 #include "platform.h"
 #include <glad/glad.h>
 #include "assimp_model_loading.h"
-
+#include <glm/gtx/quaternion.hpp>
 
 typedef glm::vec2  vec2;
 typedef glm::vec3  vec3;
@@ -133,21 +133,37 @@ struct Material
 };
 
 struct Camera {
-    float distanceToOrigin = 2.f;
-    float fov = 60.f;
-    glm::mat4 projectionMat;
-    glm::mat4 viewMat;
-    vec3 position = { 5.f, 5.f, 5.f };
-    void CalculateProjectionMatrix(const vec2& size)
-    {
-        float aspectRatio = size.x / size.y;
-        projectionMat = glm::perspective(glm::radians(fov), aspectRatio, 0.1f, 100.f);
-    }
+    //float distanceToOrigin = 2.f;
+    //float fov = 60.f;
+    //glm::mat4 projectionMat;
+    //glm::mat4 viewMat;
+    //vec3 position = { 5.f, 5.f, 5.f };
+    //vec3 cameraFront = vec3(0.f);
+    //vec3 cameraUp = vec3(0.f, 1.f, 0.f);
 
-    void CalculateViewMatrix()
-    {
-        viewMat = glm::lookAt(position, vec3(0.f), vec3(0.f, 1.f, 0.f));
-    }
+    //void CalculateProjectionMatrix(const vec2& size)
+    //{
+    //    float aspectRatio = size.x / size.y;
+    //    projectionMat = glm::perspective(glm::radians(fov), aspectRatio, 0.1f, 100.f);
+    //}
+
+    //void CalculateViewMatrix()
+    //{
+    //    viewMat = glm::lookAt(position, vec3(0.f), vec3(0.f, 1.f, 0.f));
+    //}
+
+    vec3 Position = {0.f,0.f,0.f};
+    glm::quat Rotation = glm::quat(1,0,0,0);
+    float aPitch = 2.f;
+    float aYaw = 220.f;
+    float aRoll = 220.f;
+
+    glm::mat4 Transformation() const { return translate(Position) * glm::toMat4(Rotation); };
+    glm::mat4 View() const { return inverse(Transformation()); }
+
+    void Pitch(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(1, 0, 0)); }
+    void Yaw(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(0, 1, 0)); }
+    void Roll(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(0, 0, -1)); }
 };
 
 struct App

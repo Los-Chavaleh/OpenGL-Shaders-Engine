@@ -275,11 +275,12 @@ void Gui(App* app)
     }
     ImGui::Separator();
     ImGui::Text("Camera");
-    ImGui::DragFloat("DistanceToOrigin", &app->camera.distanceToOrigin, 0.15f);
-    ImGui::SliderFloat("fov", &app->camera.fov, 0.1f, 120.f);
-    ImGui::SliderFloat("X", &app->camera.position.x, 0.1f, 120.f);
-    ImGui::SliderFloat("Y", &app->camera.position.y, 0.1f, 120.f);
-    ImGui::SliderFloat("Z", &app->camera.position.z, 0.1f, 120.f);
+    if(ImGui::SliderFloat("Pitch", &app->camera.aPitch, 0.1f, 360.f))
+        app->camera.Pitch(app->camera.aPitch);
+    if(ImGui::SliderFloat("Yaw", &app->camera.aYaw, 0.1f, 360.f))
+        app->camera.Yaw(app->camera.aYaw);
+    if(ImGui::SliderFloat("Roll", &app->camera.aRoll, 0.1f, 360.f))
+        app->camera.Roll(app->camera.aRoll);
     ImGui::End();
 }
 
@@ -337,10 +338,10 @@ void Render(App* app)
             Model& model = app->models[app->model];
             Mesh& mesh = app->meshes[model.meshIdx];
 
-            app->camera.CalculateProjectionMatrix(app->displaySize);
-            app->camera.CalculateViewMatrix();
+            //app->camera.CalculateProjectionMatrix(app->displaySize);
+            //app->camera.CalculateViewMatrix();
 
-            glUniformMatrix4fv(app->texturedMeshProgram_uViewProjection, 1, GL_FALSE, &(app->camera.projectionMat* app->camera.viewMat)[0][0]);
+            glUniformMatrix4fv(app->texturedMeshProgram_uViewProjection, 1, GL_FALSE, &(app->camera.View())[0][0]);
             //glUniformMatrix4fv(app->texturedMeshProgramIdx_uWorldMatrix, 1, GL_FALSE, &[0][0]);
 
             for (u32 i = 0; i < mesh.submeshes.size(); ++i) {
