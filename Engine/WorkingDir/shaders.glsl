@@ -52,9 +52,9 @@ void main() {
 
     float clippingScale = 5.0;
 
-    gl_Position = uWorldViewProjectionMatrix * vec4(aPosition, clippingScale);
+    gl_Position = uWorldViewProjectionMatrix * uWorldMatrix * vec4(aPosition, clippingScale);
     vTexCoord = aTexCoord;
-    vNormals = aNormals;
+    vNormals = mat3(transpose(inverse(uWorldMatrix))) * aNormals;
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
@@ -65,10 +65,15 @@ in vec3 vNormals;
 uniform sampler2D uTexture;
 
 layout(location = 0) out vec4 oColor;
-
+layout(location = 1) out vec4 oNormals;
+layout(location = 2) out vec4 oSpecular;
+layout(location = 3) out vec4 oEmissive;
 void main() {
-    oColor = texture(uTexture, vTexCoord);
-    oColor = vec4(vNormals, 1.0);
+	oColor 		= vec4(vNormals, 1.0)*texture(uTexture, vTexCoord);
+	oNormals 	= vec4(vNormals, 1.0);
+    oSpecular   = texture(uTexture, vTexCoord);
+	//oEmissive   = vec4(result, 1.0);
+	gl_FragDepth = gl_FragCoord.z - 0.2;
 }
 
 #endif

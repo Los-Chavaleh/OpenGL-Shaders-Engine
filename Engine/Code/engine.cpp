@@ -253,8 +253,79 @@ void Init(App* app)
     texturedMeshProgram.vertexInputLayout.attributes.push_back({ 1,3 });
     texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2,2 });
     app->model = LoadModel(app, "Patrick/Patrick.obj");
+    app->entities.push_back(Entity(glm::mat4(1.f), app->model));
+    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
+    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
     app->mode = Mode_Model;
     //app->camera.SetPosition();
+
+    //FRAME BUFFER INIT
+    glGenTextures(1, &app->colorController);
+    glBindTexture(GL_TEXTURE_2D, app->colorController);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->normalsController);
+    glBindTexture(GL_TEXTURE_2D, app->normalsController);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->depthController);
+    glBindTexture(GL_TEXTURE_2D, app->depthController);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->albedoController);
+    glBindTexture(GL_TEXTURE_2D, app->albedoController);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenFramebuffers(1, &app->frameBufferController);
+    glBindFramebuffer(GL_FRAMEBUFFER, app->frameBufferController);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->colorController, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, app->normalsController, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, app->albedoController, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->depthController, 0);
+
+    GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE) {
+        switch (framebufferStatus)
+        {
+        case GL_FRAMEBUFFER_UNDEFINED:                      ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:          ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:  ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
+        case GL_FRAMEBUFFER_UNSUPPORTED:                    ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:       ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
+        default:                                            ELOG("Unknown franebuffer status error | %i", framebufferStatus);
+        }
+    }
+
+    glDrawBuffers(3, &app->colorController);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 }
 
 void Gui(App* app)
@@ -275,12 +346,46 @@ void Gui(App* app)
     }
     ImGui::Separator();
     ImGui::Text("Camera");
-    if(ImGui::SliderFloat("Pitch", &app->camera.aPitch, 0.1f, 360.f))
-        app->camera.Pitch(app->camera.aPitch);
-    if(ImGui::SliderFloat("Yaw", &app->camera.aYaw, 0.1f, 360.f))
-        app->camera.Yaw(app->camera.aYaw);
-    if(ImGui::SliderFloat("Roll", &app->camera.aRoll, 0.1f, 360.f))
-        app->camera.Roll(app->camera.aRoll);
+    //if(ImGui::SliderFloat("Pitch", &app->camera.aPitch, 0.1f, 360.f))
+    //    app->camera.Pitch(app->camera.aPitch);
+    //if(ImGui::SliderFloat("Yaw", &app->camera.aYaw, 0.1f, 360.f))
+    //    app->camera.Yaw(app->camera.aYaw);
+    //if(ImGui::SliderFloat("Roll", &app->camera.aRoll, 0.1f, 360.f))
+    //    app->camera.Roll(app->camera.aRoll);
+    //if (ImGui::SliderFloat("Z", &app->camera.Position.z, 0.1f, 360.f))
+    //    app->camera.Transformation();
+    ImGui::Separator();
+
+    static const char* controllers[] = { "Render", "Albedo", "Normals", "Depth"};
+    static int sel = 0;
+    ImGui::Text("Target render");
+    if (ImGui::BeginCombo("Target", controllers[sel])) {
+        for (int i = 0; i < 4; ++i)
+            if (ImGui::Selectable(controllers[i])) sel = i;
+        ImGui::EndCombo();
+    }
+
+    GLuint texture = 0;
+    switch (sel)
+    {
+    case 0:
+        texture = app->colorController;
+        break;
+    case 1:
+        texture = app->albedoController;
+        break;
+    case 2:
+        texture = app->normalsController;
+        break;
+    case 3:
+        texture = app->depthController;
+        break;
+    default:
+        break;
+    }
+
+    ImGui::Image((ImTextureID)texture, ImVec2(ImGui::GetWindowWidth(), app->displaySize.y * ImGui::GetWindowWidth() / app->displaySize.x), ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+
     ImGui::End();
 }
 
@@ -294,6 +399,10 @@ void Update(App* app)
 void Render(App* app)
 {
     // - clear the framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, app->frameBufferController);
+    GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,  GL_COLOR_ATTACHMENT2};
+    glDrawBuffers(ARRAY_COUNT(drawBuffers), drawBuffers);
+
     glClearColor(0.2f, 0.2f, 0.2f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -335,28 +444,27 @@ void Render(App* app)
             Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
             glUseProgram(texturedMeshProgram.handle);
 
-            Model& model = app->models[app->model];
-            Mesh& mesh = app->meshes[model.meshIdx];
+            for (int i = 0; i < app->entities.size(); ++i)
+            {
+                Model& model = app->models[app->entities[i].modelId];
+                Mesh& mesh = app->meshes[model.meshIdx];
+                glUniformMatrix4fv(app->texturedMeshProgram_uViewProjection, 1, GL_FALSE, &(app->camera.GetViewMatrix({app->displaySize.x, app->displaySize.y}))[0][0]);
+                glUniformMatrix4fv(app->texturedMeshProgram_uWorldMatrix, 1, GL_FALSE, glm::value_ptr(app->entities[i].matrix));
 
-            //app->camera.CalculateProjectionMatrix(app->displaySize);
-            //app->camera.CalculateViewMatrix();
+                for (u32 i = 0; i < mesh.submeshes.size(); ++i) {
+                    GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
+                    glBindVertexArray(vao);
 
-            glUniformMatrix4fv(app->texturedMeshProgram_uViewProjection, 1, GL_FALSE, &(app->camera.View())[0][0]);
-            //glUniformMatrix4fv(app->texturedMeshProgramIdx_uWorldMatrix, 1, GL_FALSE, &[0][0]);
+                    u32 submeshMaterialIdx = model.materialIdx[i];
+                    Material& submeshmaterial = app->materials[submeshMaterialIdx];
 
-            for (u32 i = 0; i < mesh.submeshes.size(); ++i) {
-                GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
-                glBindVertexArray(vao);
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[submeshmaterial.albedoTextureIdx].handle);
+                    glUniform1i(app->texturedMeshProgram_uTexture, 0);
 
-                u32 submeshMaterialIdx = model.materialIdx[i];
-                Material& submeshmaterial = app->materials[submeshMaterialIdx];
-
-                glActiveTexture(GL_TEXTURE);
-                glBindTexture(GL_TEXTURE_2D, app->textures[submeshmaterial.albedoTextureIdx].handle);
-                glUniform1i(app->texturedMeshProgram_uTexture, 0);
-
-                Submesh& submesh = mesh.submeshes[i];
-                glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)submesh.indexOffset);
+                    Submesh& submesh = mesh.submeshes[i];
+                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)submesh.indexOffset);
+                }
             }
             break;
         }
@@ -364,4 +472,9 @@ void Render(App* app)
 
         default:;
     }
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, app->frameBufferController);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 }

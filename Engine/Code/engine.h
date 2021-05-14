@@ -133,37 +133,38 @@ struct Material
 };
 
 struct Camera {
-    //float distanceToOrigin = 2.f;
-    //float fov = 60.f;
-    //glm::mat4 projectionMat;
-    //glm::mat4 viewMat;
-    //vec3 position = { 5.f, 5.f, 5.f };
-    //vec3 cameraFront = vec3(0.f);
-    //vec3 cameraUp = vec3(0.f, 1.f, 0.f);
+    //vec3 Position = {0.f,0.f,5.f};
+    //glm::quat Rotation = glm::quat(1,0,0,0);
+    //float aPitch = 2.f;
+    //float aYaw = 220.f;
+    //float aRoll = 220.f;
 
-    //void CalculateProjectionMatrix(const vec2& size)
-    //{
-    //    float aspectRatio = size.x / size.y;
-    //    projectionMat = glm::perspective(glm::radians(fov), aspectRatio, 0.1f, 100.f);
-    //}
+    //glm::mat4 Transformation() const { return translate(Position) * glm::toMat4(Rotation); };
+    //glm::mat4 View() const { return Transformation(); }
 
-    //void CalculateViewMatrix()
-    //{
-    //    viewMat = glm::lookAt(position, vec3(0.f), vec3(0.f, 1.f, 0.f));
-    //}
+    //void Pitch(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(1, 0, 0)); }
+    //void Yaw(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(0, 1, 0)); }
+    //void Roll(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(0, 0, 1)); }
 
-    vec3 Position = {0.f,0.f,0.f};
-    glm::quat Rotation = glm::quat(1,0,0,0);
-    float aPitch = 2.f;
-    float aYaw = 220.f;
-    float aRoll = 220.f;
+    float distanceToOrigin = 1.f;
+    float phi{ 90.f }, theta{ 90.f };
+    vec3 pos;
+    glm::mat4 GetViewMatrix(const vec2& size) {
+        // Make sure that: 0 < phi < 3.14
+        float Phi = glm::radians(phi);
+        float Theta = glm::radians(theta);
+        pos = { distanceToOrigin * sin(Phi) * cos(Theta), distanceToOrigin * cos(Phi), distanceToOrigin * sin(Phi) * sin(Theta) };
 
-    glm::mat4 Transformation() const { return translate(Position) * glm::toMat4(Rotation); };
-    glm::mat4 View() const { return inverse(Transformation()); }
+        return glm::perspective(glm::radians(60.f), size.x / size.y, 0.1f, 100.f) * glm::lookAt(pos, vec3(0.f), vec3(0.f, 1.f, 0.f));
+    }
+};
 
-    void Pitch(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(1, 0, 0)); }
-    void Yaw(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(0, 1, 0)); }
-    void Roll(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(0, 0, -1)); }
+struct Entity
+{
+    glm::mat4 matrix = glm::mat4(0.f);
+    u32 modelId;
+
+    Entity(const glm::mat4& mat, u32 mdlId) : matrix(mat), modelId(mdlId) {};
 };
 
 struct App
@@ -186,6 +187,7 @@ struct App
     std::vector<Mesh>  meshes;
     std::vector<Model>  models;
     std::vector<Program>  programs;
+    std::vector<Entity> entities;
 
     // program indices
     u32 texturedGeometryProgramIdx;
@@ -213,7 +215,11 @@ struct App
     GLuint texturedMeshProgram_uWorldMatrix;
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
-
+    GLuint frameBufferController;
+    GLuint depthController;
+    GLuint colorController;
+    GLuint normalsController;
+    GLuint albedoController;
     // GPU Info
     OpenGLInfo oglInfo;
 
