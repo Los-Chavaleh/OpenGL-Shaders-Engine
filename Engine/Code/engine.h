@@ -148,14 +148,24 @@ struct Camera {
 
     float distanceToOrigin = 1.f;
     float phi{ 90.f }, theta{ 90.f };
-    vec3 pos;
-    glm::mat4 GetViewMatrix(const vec2& size) {
-        // Make sure that: 0 < phi < 3.14
-        float Phi = glm::radians(phi);
-        float Theta = glm::radians(theta);
-        pos = { distanceToOrigin * sin(Phi) * cos(Theta), distanceToOrigin * cos(Phi), distanceToOrigin * sin(Phi) * sin(Theta) };
+	float Phi = glm::radians(phi);
+	float Theta = glm::radians(theta);
 
-        return glm::perspective(glm::radians(60.f), size.x / size.y, 0.1f, 100.f) * glm::lookAt(pos, vec3(0.f), vec3(0.f, 1.f, 0.f));
+	glm::vec3 cameraPos = { distanceToOrigin * sin(Phi) * cos(Theta), distanceToOrigin * cos(Phi), distanceToOrigin * sin(Phi) * sin(Theta) };
+	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
+
+	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
+	glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
+	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+
+    glm::mat4 GetViewMatrix(const vec3& camPos, const vec2& size) {
+        // Make sure that: 0 < phi < 3.14
+
+		glm::mat4 view = glm::lookAt(camPos, camPos + cameraFront, cameraUp);
+
+        return glm::perspective(glm::radians(60.f), size.x / size.y, 0.1f, 100.f) * view;
     }
 };
 

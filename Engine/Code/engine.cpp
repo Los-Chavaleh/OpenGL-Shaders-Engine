@@ -229,6 +229,7 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 
 void Init(App* app)
 {
+	app->camera.cameraPos = { app->camera.distanceToOrigin * sin(app->camera.Phi) * cos(app->camera.Theta), app->camera.distanceToOrigin * cos(app->camera.Phi), app->camera.distanceToOrigin * sin(app->camera.Phi) * sin(app->camera.Theta) };
 
     // RETRIEVE INFO FROM GPU
     app->oglInfo.version = glGetString(GL_VERSION);
@@ -346,6 +347,13 @@ void Gui(App* app)
     }
     ImGui::Separator();
     ImGui::Text("Camera");
+	ImGui::InputFloat3("CameraUp", &app->camera.cameraUp.x, "%.3f");
+	ImGui::InputFloat3("CameraPos", &app->camera.cameraPos.x, "%.3f");
+	ImGui::InputFloat3("CameraRight", &app->camera.cameraRight.x, "%.3f");
+
+	//ImGui::Text("FRONT: %s", app->oglInfo.version);
+	//ImGui::Text("RIGHT: %s", app->oglInfo.renderer);
+	//ImGui::Text("UP: %s", app->camera.came);
     //if(ImGui::SliderFloat("Pitch", &app->camera.aPitch, 0.1f, 360.f))
     //    app->camera.Pitch(app->camera.aPitch);
     //if(ImGui::SliderFloat("Yaw", &app->camera.aYaw, 0.1f, 360.f))
@@ -394,6 +402,16 @@ void Update(App* app)
     // You can handle app->input keyboard/mouse here
     if (app->input.keys[K_0] == ButtonState::BUTTON_PRESS)
         app->oglInfo.show = !app->oglInfo.show;
+
+	const float cameraSpeed = 2.5f * app->deltaTime; // adjust accordingly
+	if (app->input.keys[K_W] == ButtonState::BUTTON_PRESSED)
+		app->camera.cameraPos += cameraSpeed * app->camera.cameraFront;
+	if (app->input.keys[K_S] == ButtonState::BUTTON_PRESSED)
+		app->camera.cameraPos -= cameraSpeed * app->camera.cameraFront;
+	if (app->input.keys[K_A] == ButtonState::BUTTON_PRESSED)
+		app->camera.cameraPos -= glm::normalize(glm::cross(app->camera.cameraFront, app->camera.cameraUp)) * cameraSpeed;
+	if (app->input.keys[K_D] == ButtonState::BUTTON_PRESSED)
+		app->camera.cameraPos += glm::normalize(glm::cross(app->camera.cameraFront, app->camera.cameraUp)) * cameraSpeed;
 }
 
 void Render(App* app)
@@ -448,7 +466,7 @@ void Render(App* app)
             {
                 Model& model = app->models[app->entities[i].modelId];
                 Mesh& mesh = app->meshes[model.meshIdx];
-                glUniformMatrix4fv(app->texturedMeshProgram_uViewProjection, 1, GL_FALSE, &(app->camera.GetViewMatrix({app->displaySize.x, app->displaySize.y}))[0][0]);
+				glUniformMatrix4fv(app->texturedMeshProgram_uViewProjection, 1, GL_FALSE, &(app->camera.GetViewMatrix(app->camera.cameraPos, app->displaySize))[0][0]);
                 glUniformMatrix4fv(app->texturedMeshProgram_uWorldMatrix, 1, GL_FALSE, glm::value_ptr(app->entities[i].matrix));
 
                 for (u32 i = 0; i < mesh.submeshes.size(); ++i) {
