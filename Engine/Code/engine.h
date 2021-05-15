@@ -135,8 +135,8 @@ struct Material
 struct Camera {
     //vec3 Position = {0.f,0.f,5.f};
     //glm::quat Rotation = glm::quat(1,0,0,0);
-    //float aPitch = 2.f;
-    //float aYaw = 220.f;
+    float pitch = 0.f;
+    float yaw = 0.f;
     //float aRoll = 220.f;
 
     //glm::mat4 Transformation() const { return translate(Position) * glm::toMat4(Rotation); };
@@ -160,12 +160,14 @@ struct Camera {
 	glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
 	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 
+	float fov = 60.f;
+
     glm::mat4 GetViewMatrix(const vec3& camPos, const vec2& size) {
         // Make sure that: 0 < phi < 3.14
 
 		glm::mat4 view = glm::lookAt(camPos, camPos + cameraFront, cameraUp);
 
-        return glm::perspective(glm::radians(60.f), size.x / size.y, 0.1f, 100.f) * view;
+        return glm::perspective(glm::radians(fov), size.x / size.y, 0.1f, 100.f) * view;
     }
 };
 
@@ -234,6 +236,8 @@ struct App
     OpenGLInfo oglInfo;
 
     Camera camera;
+	bool firstMouse = true;
+
 };
 
 u32 LoadTexture2D(App* app, const char* filepath);

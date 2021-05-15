@@ -38,11 +38,40 @@ void OnGlfwError(int errorCode, const char *errorMessage)
 
 void OnGlfwMouseMoveEvent(GLFWwindow* window, double xpos, double ypos)
 {
-    App* app = (App*)glfwGetWindowUserPointer(window);
-    app->input.mouseDelta.x = xpos - app->input.mousePos.x;
-    app->input.mouseDelta.y = ypos - app->input.mousePos.y;
-    app->input.mousePos.x = xpos;
-    app->input.mousePos.y = ypos;
+
+	App* app = (App*)glfwGetWindowUserPointer(window);
+
+	if (app->input.mouseButtons[LEFT] == ButtonState::BUTTON_PRESSED)
+	{
+		if (app->firstMouse)
+		{
+			app->input.mouseDelta.x = xpos;
+			app->input.mouseDelta.y = ypos;
+			app->firstMouse = false;
+		}
+
+		app->input.mouseDelta.x = xpos - app->input.mousePos.x;
+		app->input.mouseDelta.y = app->input.mousePos.y - ypos;
+		app->input.mousePos.x = xpos;
+		app->input.mousePos.y = ypos;
+
+		app->input.mouseDelta.x *= app->input.sensitivity;
+		app->input.mouseDelta.y *= app->input.sensitivity;
+
+		app->camera.yaw += app->input.mouseDelta.x;
+		app->camera.pitch += app->input.mouseDelta.y;
+
+		if (app->camera.pitch > 89.0f)
+			app->camera.pitch = 89.0f;
+		if (app->camera.pitch < -89.0f)
+			app->camera.pitch = -89.0f;
+
+		glm::vec3 direction;
+		direction.x = cos(glm::radians(app->camera.yaw)) * cos(glm::radians(app->camera.pitch));
+		direction.y = sin(glm::radians(app->camera.pitch));
+		direction.z = sin(glm::radians(app->camera.yaw)) * cos(glm::radians(app->camera.pitch));
+		app->camera.cameraFront = glm::normalize(direction);
+	}
 }
 
 void OnGlfwMouseEvent(GLFWwindow* window, int button, int event, int modifiers)
@@ -65,7 +94,13 @@ void OnGlfwMouseEvent(GLFWwindow* window, int button, int event, int modifiers)
 
 void OnGlfwScrollEvent(GLFWwindow* window, double xoffset, double yoffset)
 {
-    // Nothing do yet... maybe zoom in/out in the future?
+	App* app = (App*)glfwGetWindowUserPointer(window);
+
+	app->camera.fov -= (float)yoffset;
+	if (app->camera.fov < 1.0f)
+		app->camera.fov = 1.0f;
+	if (app->camera.fov > 45.0f)
+		app->camera.fov = 45.0f;
 }
 
 void OnGlfwKeyboardEvent(GLFWwindow* window, int key, int scancode, int action, int mods)

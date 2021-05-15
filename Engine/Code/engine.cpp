@@ -230,6 +230,7 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 void Init(App* app)
 {
 	app->camera.cameraPos = { app->camera.distanceToOrigin * sin(app->camera.Phi) * cos(app->camera.Theta), app->camera.distanceToOrigin * cos(app->camera.Phi), app->camera.distanceToOrigin * sin(app->camera.Phi) * sin(app->camera.Theta) };
+	app->firstMouse = true;
 
     // RETRIEVE INFO FROM GPU
     app->oglInfo.version = glGetString(GL_VERSION);
@@ -350,6 +351,9 @@ void Gui(App* app)
 	ImGui::InputFloat3("CameraUp", &app->camera.cameraUp.x, "%.3f");
 	ImGui::InputFloat3("CameraPos", &app->camera.cameraPos.x, "%.3f");
 	ImGui::InputFloat3("CameraRight", &app->camera.cameraRight.x, "%.3f");
+	ImGui::InputFloat("Yaw", &app->camera.yaw);
+	ImGui::InputFloat("Pitch", &app->camera.pitch);
+	ImGui::InputFloat("Sensitivity", &app->input.sensitivity);
 
 	//ImGui::Text("FRONT: %s", app->oglInfo.version);
 	//ImGui::Text("RIGHT: %s", app->oglInfo.renderer);
@@ -412,6 +416,9 @@ void Update(App* app)
 		app->camera.cameraPos -= glm::normalize(glm::cross(app->camera.cameraFront, app->camera.cameraUp)) * cameraSpeed;
 	if (app->input.keys[K_D] == ButtonState::BUTTON_PRESSED)
 		app->camera.cameraPos += glm::normalize(glm::cross(app->camera.cameraFront, app->camera.cameraUp)) * cameraSpeed;
+
+
+
 }
 
 void Render(App* app)
