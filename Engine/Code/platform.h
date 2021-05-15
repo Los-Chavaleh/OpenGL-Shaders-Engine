@@ -51,11 +51,11 @@ enum ButtonState {
 };
 
 struct Input {
-    glm::vec2   mousePos;
-	glm::vec2   mouseDelta = { 400,300 };
+    glm::vec2   mousePos = { 400,300 };
+	glm::vec2   mouseDelta;
     ButtonState mouseButtons[MOUSE_BUTTON_COUNT];
     ButtonState keys[KEY_COUNT];
-	float sensitivity = 0.7f;
+	float sensitivity = 0.1f;
 };
 
 struct String

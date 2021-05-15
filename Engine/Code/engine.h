@@ -136,7 +136,7 @@ struct Camera {
     //vec3 Position = {0.f,0.f,5.f};
     //glm::quat Rotation = glm::quat(1,0,0,0);
     float pitch = 0.f;
-    float yaw = 0.f;
+    float yaw = -90.f;
     //float aRoll = 220.f;
 
     //glm::mat4 Transformation() const { return translate(Position) * glm::toMat4(Rotation); };
