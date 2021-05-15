@@ -47,6 +47,7 @@ uniform mat4 uWorldViewProjectionMatrix;
 
 out vec2 vTexCoord;
 out vec3 vNormals;
+out vec3 vPosition;
 
 void main() {
 
@@ -55,25 +56,32 @@ void main() {
     gl_Position = uWorldViewProjectionMatrix * uWorldMatrix * vec4(aPosition, clippingScale);
     vTexCoord = aTexCoord;
     vNormals = mat3(transpose(inverse(uWorldMatrix))) * aNormals;
+	vPosition = vec3(uWorldMatrix * vec4(aPos,1.0));
+
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
 
 in vec2 vTexCoord;
 in vec3 vNormals;
+in vec3 vPosition;
+
 
 uniform sampler2D uTexture;
 
 layout(location = 0) out vec4 oColor;
 layout(location = 1) out vec4 oNormals;
 layout(location = 2) out vec4 oSpecular;
-layout(location = 3) out vec4 oEmissive;
+//layout(location = 4) out vec4 oEmissive;
+layout(location = 3) out vec4 oPosition;
+
 void main() {
 	oColor 		= vec4(vNormals, 1.0)*texture(uTexture, vTexCoord);
 	oNormals 	= vec4(vNormals, 1.0);
     oSpecular   = texture(uTexture, vTexCoord);
 	//oEmissive   = vec4(result, 1.0);
 	gl_FragDepth = gl_FragCoord.z - 0.2;
+	oPosition   = vec4(vPosition, 1.0);
 }
 
 #endif

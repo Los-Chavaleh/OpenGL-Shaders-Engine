@@ -274,7 +274,7 @@ void Init(App* app)
 
     glGenTextures(1, &app->normalsController);
     glBindTexture(GL_TEXTURE_2D, app->normalsController);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -302,12 +302,23 @@ void Init(App* app)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+	glGenTextures(1, &app->positionController);
+	glBindTexture(GL_TEXTURE_2D, app->positionController);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
     glGenFramebuffers(1, &app->frameBufferController);
     glBindFramebuffer(GL_FRAMEBUFFER, app->frameBufferController);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->colorController, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, app->normalsController, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, app->albedoController, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->depthController, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, app->positionController, 0);
 
     GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE) {
@@ -325,7 +336,7 @@ void Init(App* app)
         }
     }
 
-    glDrawBuffers(3, &app->colorController);
+    glDrawBuffers(4, &app->colorController);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
@@ -368,11 +379,11 @@ void Gui(App* app)
     //    app->camera.Transformation();
     ImGui::Separator();
 
-    static const char* controllers[] = { "Render", "Albedo", "Normals", "Depth"};
+    static const char* controllers[] = { "Render", "Albedo", "Normals", "Depth", "Position"};
     static int sel = 0;
     ImGui::Text("Target render");
     if (ImGui::BeginCombo("Target", controllers[sel])) {
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < 5; ++i)
             if (ImGui::Selectable(controllers[i])) sel = i;
         ImGui::EndCombo();
     }
@@ -392,6 +403,9 @@ void Gui(App* app)
     case 3:
         texture = app->depthController;
         break;
+	case 4:
+		texture = app->positionController;
+		break;
     default:
         break;
     }
@@ -425,7 +439,7 @@ void Render(App* app)
 {
     // - clear the framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, app->frameBufferController);
-    GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,  GL_COLOR_ATTACHMENT2};
+    GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,  GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
     glDrawBuffers(ARRAY_COUNT(drawBuffers), drawBuffers);
 
     glClearColor(0.2f, 0.2f, 0.2f, 1.f);

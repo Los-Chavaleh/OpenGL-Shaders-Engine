@@ -232,6 +232,8 @@ struct App
     GLuint colorController;
     GLuint normalsController;
     GLuint albedoController;
+	GLuint positionController;
+
     // GPU Info
     OpenGLInfo oglInfo;
 
