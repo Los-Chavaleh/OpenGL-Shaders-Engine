@@ -12,6 +12,9 @@
 #include <iostream>
 
 #include "assimp_model_loading.h"
+#include "buffer_management.h"
+
+#define BINDING(b) b
 
 GLuint CreateProgramFromSource(String programSource, const char* shaderName)
 {
@@ -244,6 +247,12 @@ void Init(App* app)
         app->oglInfo.extensions = glGetStringi(GL_EXTENSIONS, GLuint(i));
     }
 
+
+    GLint maxsize;
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxsize);
+    app->cBuffer = CreateBuffer(maxsize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
+
     // PROGRAM INITIALIZATION
 
     app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_TEXTURED_MESH");
@@ -254,10 +263,13 @@ void Init(App* app)
     texturedMeshProgram.vertexInputLayout.attributes.push_back({ 0,3 });
     texturedMeshProgram.vertexInputLayout.attributes.push_back({ 1,3 });
     texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2,2 });
+
     app->model = LoadModel(app, "Patrick/Patrick.obj");
     app->entities.push_back(Entity(glm::mat4(1.f), app->model));
     app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
     app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
+
+    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, 1.0, 1.0), vec3(0.0, -1.0, 1.0), vec3(0.f, -10.f, 0.f)));
     app->mode = Mode_Model;
     //app->camera.SetPosition();
 
@@ -469,12 +481,37 @@ void Render(App* app)
             Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
             glUseProgram(texturedMeshProgram.handle);
 
+            MapBuffer(app->cBuffer, GL_WRITE_ONLY);
+            app->globalParamsOffset = app->cBuffer.head;
+
+            PushVec3(app->cBuffer, app->camera.cameraPos);
+            PushUInt(app->cBuffer, app->lights.size());
+
+            for (auto& light : app->lights)
+            {
+                AlignHead(app->cBuffer, sizeof(glm::vec4));
+
+                PushUInt(app->cBuffer, light.type);
+                PushVec3(app->cBuffer, light.color);
+                PushVec3(app->cBuffer, light.direction);
+                PushVec3(app->cBuffer, light.position);
+
+                app->globalParamsSize = app->cBuffer.head - app->globalParamsOffset;
+            }
+
             for (int i = 0; i < app->entities.size(); ++i)
             {
                 Model& model = app->models[app->entities[i].modelId];
                 Mesh& mesh = app->meshes[model.meshIdx];
-				glUniformMatrix4fv(app->texturedMeshProgram_uViewProjection, 1, GL_FALSE, &(app->camera.GetViewMatrix(app->camera.cameraPos, app->displaySize))[0][0]);
-                glUniformMatrix4fv(app->texturedMeshProgram_uWorldMatrix, 1, GL_FALSE, glm::value_ptr(app->entities[i].matrix));
+
+                AlignHead(app->cBuffer, app->uniformBlockAlignment);
+                app->entities[i].localParamsOffset = app->cBuffer.head;
+                PushMat4(app->cBuffer, app->entities[i].matrix);
+                PushMat4(app->cBuffer, app->camera.GetViewMatrix(app->camera.cameraPos, app->displaySize));
+                app->entities[i].localParamsSize = app->cBuffer.head - app->entities[i].localParamsOffset;
+
+                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->cBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
+                glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->cBuffer.handle, app->entities[i].localParamsOffset, app->entities[i].localParamsSize);
 
                 for (u32 i = 0; i < mesh.submeshes.size(); ++i) {
                     GLuint vao = FindVAO(mesh, i, texturedMeshProgram);
@@ -491,6 +528,8 @@ void Render(App* app)
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)submesh.indexOffset);
                 }
             }
+            UnmapBuffer(app->cBuffer);
+
             break;
         }
        

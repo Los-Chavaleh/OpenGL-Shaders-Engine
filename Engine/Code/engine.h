@@ -16,6 +16,14 @@ typedef glm::ivec2 ivec2;
 typedef glm::ivec3 ivec3;
 typedef glm::ivec4 ivec4;
 
+struct Buffer {
+    GLuint  handle;
+    GLenum  type;
+    u32     size;
+    u32     head;
+    void* data;
+};
+
 struct VertexV3V2
 {
     glm::vec3 pos;
@@ -133,20 +141,10 @@ struct Material
 };
 
 struct Camera {
-    //vec3 Position = {0.f,0.f,5.f};
-    //glm::quat Rotation = glm::quat(1,0,0,0);
     float pitch = 0.f;
     float yaw = -90.f;
-    //float aRoll = 220.f;
 
-    //glm::mat4 Transformation() const { return translate(Position) * glm::toMat4(Rotation); };
-    //glm::mat4 View() const { return Transformation(); }
-
-    //void Pitch(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(1, 0, 0)); }
-    //void Yaw(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(0, 1, 0)); }
-    //void Roll(float angle) { Rotation = rotate(Rotation, glm::radians(angle), vec3(0, 0, 1)); }
-
-    float distanceToOrigin = 1.f;
+    float distanceToOrigin = 10.f;
     float phi{ 90.f }, theta{ 90.f };
 	float Phi = glm::radians(phi);
 	float Theta = glm::radians(theta);
@@ -175,8 +173,25 @@ struct Entity
 {
     glm::mat4 matrix = glm::mat4(0.f);
     u32 modelId;
+    u32 localParamsOffset;
+    u32 localParamsSize;
 
     Entity(const glm::mat4& mat, u32 mdlId) : matrix(mat), modelId(mdlId) {};
+};
+
+enum LightType
+{
+    LightType_Directional,
+    LightType_Point
+};
+
+struct Light
+{
+    LightType type;
+    vec3 color;
+    vec3 direction;
+    vec3 position;
+    Light(const LightType t, const vec3 c, vec3 dir, vec3 pos) : type(t), color(c), direction(dir), position(pos) {}
 };
 
 struct App
@@ -200,7 +215,7 @@ struct App
     std::vector<Model>  models;
     std::vector<Program>  programs;
     std::vector<Entity> entities;
-
+    std::vector<Light> lights;
     // program indices
     u32 texturedGeometryProgramIdx;
     u32 texturedMeshProgramIdx;
@@ -237,7 +252,10 @@ struct App
 
     Camera camera;
 	bool firstMouse = true;
-
+    Buffer cBuffer;
+    GLuint globalParamsOffset;
+    GLuint globalParamsSize;
+    int uniformBlockAlignment;
 };
 
 u32 LoadTexture2D(App* app, const char* filepath);
