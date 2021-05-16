@@ -255,7 +255,7 @@ struct App
     Buffer cBuffer;
     GLuint globalParamsOffset;
     GLuint globalParamsSize;
-    int uniformBlockAlignment;
+    int uniformBlockAlignmentOffset;
 };
 
 u32 LoadTexture2D(App* app, const char* filepath);

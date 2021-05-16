@@ -248,10 +248,10 @@ void Init(App* app)
     }
 
 
-    GLint maxsize;
-    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignment);
-    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxsize);
-    app->cBuffer = CreateBuffer(maxsize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
+    GLint maxBufferSize;
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignmentOffset);
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxBufferSize);
+    app->cBuffer = CreateBuffer(maxBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
     // PROGRAM INITIALIZATION
 
@@ -269,7 +269,9 @@ void Init(App* app)
     app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
     app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
 
-    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, 1.0, 1.0), vec3(0.0, -1.0, 1.0), vec3(0.f, -10.f, 0.f)));
+    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, 1.0, 1.0), vec3(0.0, -1.0, 1.0), vec3(0.f, -20.f, 0.f)));
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.0,0.8,0.9), vec3(0.0, -1.0, 1.0), vec3(0.f, 1.f, 2.f)));
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.6, 0.2, 0.1), vec3(0.0, -1.0, 1.0), vec3(-2.f, 1.f, 2.f)));
     app->mode = Mode_Model;
     //app->camera.SetPosition();
 
@@ -367,17 +369,6 @@ void Gui(App* app)
 	ImGui::InputFloat("Pitch", &app->camera.pitch);
 	ImGui::InputFloat("Sensitivity", &app->input.sensitivity);
 
-	//ImGui::Text("FRONT: %s", app->oglInfo.version);
-	//ImGui::Text("RIGHT: %s", app->oglInfo.renderer);
-	//ImGui::Text("UP: %s", app->camera.came);
-    //if(ImGui::SliderFloat("Pitch", &app->camera.aPitch, 0.1f, 360.f))
-    //    app->camera.Pitch(app->camera.aPitch);
-    //if(ImGui::SliderFloat("Yaw", &app->camera.aYaw, 0.1f, 360.f))
-    //    app->camera.Yaw(app->camera.aYaw);
-    //if(ImGui::SliderFloat("Roll", &app->camera.aRoll, 0.1f, 360.f))
-    //    app->camera.Roll(app->camera.aRoll);
-    //if (ImGui::SliderFloat("Z", &app->camera.Position.z, 0.1f, 360.f))
-    //    app->camera.Transformation();
     ImGui::Separator();
 
     static const char* controllers[] = { "Render", "Albedo", "Normals", "Depth"};
@@ -504,7 +495,7 @@ void Render(App* app)
                 Model& model = app->models[app->entities[i].modelId];
                 Mesh& mesh = app->meshes[model.meshIdx];
 
-                AlignHead(app->cBuffer, app->uniformBlockAlignment);
+                AlignHead(app->cBuffer, app->uniformBlockAlignmentOffset);
                 app->entities[i].localParamsOffset = app->cBuffer.head;
                 PushMat4(app->cBuffer, app->entities[i].matrix);
                 PushMat4(app->cBuffer, app->camera.GetViewMatrix(app->camera.cameraPos, app->displaySize));
