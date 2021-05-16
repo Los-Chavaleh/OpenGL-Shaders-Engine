@@ -86,7 +86,8 @@ struct Program
 enum Mode
 {
     Mode_TexturedQuad,
-    Mode_Model,
+    Mode_Forward,
+    Mode_Deferred,
     Mode_Count
 };
 
@@ -220,6 +221,7 @@ struct App
     u32 texturedGeometryProgramIdx;
     u32 texturedMeshProgramIdx;
     u32 meshProgramIdx;
+    u32 lightsProgramIdx;
     // texture indices
     u32 diceTexIdx;
     u32 whiteTexIdx;
@@ -238,8 +240,6 @@ struct App
     // Location of the texture uniform in the textured quad shader
     GLuint programUniformTexture;
     GLuint texturedMeshProgram_uTexture;
-    GLuint texturedMeshProgram_uViewProjection;
-    GLuint texturedMeshProgram_uWorldMatrix;
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
     GLuint frameBufferController;
@@ -247,6 +247,7 @@ struct App
     GLuint colorController;
     GLuint normalsController;
     GLuint albedoController;
+    GLuint positionController;
     // GPU Info
     OpenGLInfo oglInfo;
 
