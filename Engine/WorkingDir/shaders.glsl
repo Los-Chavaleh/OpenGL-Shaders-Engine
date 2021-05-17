@@ -47,6 +47,7 @@ struct Light{
 	 vec3	color;
 	 vec3	direction;
 	 vec3	position;
+     	 float 			intensity;
 };
 
 layout(binding = 0, std140) uniform GlobalParms
@@ -82,6 +83,7 @@ void main() {
 	 vec3	color;
 	 vec3	direction;
 	 vec3	position;
+     float 			intensity;
 };
 
 layout(binding = 0, std140) uniform GlobalParms
@@ -207,6 +209,7 @@ void main() {
 	 vec3	color;
 	 vec3	direction;
 	 vec3	position;
+     float 			intensity;
 };
 
 layout(binding = 0, std140) uniform GlobalParms
@@ -230,9 +233,10 @@ void main() {
 
 	oColor 		= texture(uTexture, vTexCoord);
 	oNormals 	= vec4(vNormals, 1.0);
-    gl_FragDepth = gl_FragCoord.z - 0.2;
+    
     oAlbedo   =   texture(uTexture, vTexCoord);
     oPosition = vec4(vPosition, 1.0);
+    gl_FragDepth = gl_FragCoord.z - 0.2;
 }
 
 #endif
@@ -254,6 +258,7 @@ struct Light{
 	 vec3	color;
 	 vec3	direction;
 	 vec3	position;
+          float 			intensity;
 };
 
 layout(binding = 0, std140) uniform GlobalParms
@@ -279,46 +284,42 @@ void main() {
 	 vec3	color;
 	 vec3	direction;
 	 vec3	position;
+     float 			intensity;
 };
 
-vec3 DirectionalLight(vec3 lightPos, vec3 color, vec3 normal){
-    vec3 lightColor = vec3(1.);
-    // Ambient
-    vec3 ambient = lightColor * 0.15 * color;
-
+vec3 DirectionalLight(Light light, vec3 normal, vec3 view_dir, vec2 texCoords){
+	vec3 ambient = light.color;
     // Diffuse
-    vec3 lightDirection = normalize(-lightPos);
-    float diffuseIntensity = max(dot(normal, lightDirection),0.0);
-    vec3 diffuse = diffuseIntensity * lightColor * color;
-
-    // Specular
-    float specularStrength = .85;
-    float specularIntensity = pow(max(dot(normal, lightDirection),0.0),32.);
-    vec3 specular = specularStrength * specularIntensity * lightColor;
+    //vec3 fake_lightDir = normalize(light.lightPos - frag_pos);
+    vec3 lightDir = normalize(-light.direction);
+    float diff = max(dot(lightDir, normal), 0.0);
+    vec3 diffuse = ambient *  diff;
     
-    return ambient + diffuse + specular;
+    // Specular
+    vec3 halfwayDir = normalize(lightDir + view_dir); 
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), 0.0) * 0.01;
+
+    vec3 specular = vec3(0);
+    specular = diffuse * spec;
+    // Final Calculation     
+    return (diffuse + specular) * light.intensity;
 }
 
-vec3 PointLight(vec3 lightPos, vec3 color, vec3 normal, vec3 fragPosition, vec3 view_dir)
+vec3 PointLight(Light light, vec3 normal, vec3 frag_pos, vec3 view_dir, vec2 texCoords)
 {
-    // Ambient
-    vec3 ambient = color;
-
-    // Diffuse
-    vec3 lightDir = normalize(lightPos - fragPosition);
+    vec3 ambient = light.color;
+    // diffuse shadi
+    vec3 lightDir = normalize(light.position - frag_pos);
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = ambient * diff;
-
-     // Specular
+     // Specul
     vec3 reflectDir = reflect(-lightDir, normal);  
-    float spec = pow(max(dot(view_dir, reflectDir), 0.0), 0.0) * 0.01;
+    float spec = pow(max(dot(view_dir, reflectDir), 0.0), 0.0) * 0.01;//    vec3 specular = vec3(0);
     vec3 specular = ambient * spec;
-
-    // Range
-    float distance = length(lightPos - fragPosition);
-    float range = 4/distance;
-    
-	return (diffuse + specular) * range;
+    // attenuati
+    float distance = length(light.position - frag_pos);
+    float attenuation = 1/distance;      
+	return (diffuse + specular) * attenuation;
 }
 
 layout(binding = 0, std140) uniform GlobalParms
@@ -346,14 +347,14 @@ void main() {
 	for(int i = 0; i < uLightCount; ++i)
 	{		if(uLight[i].type == 0) //Directional
             {
-			    lightsColors += DirectionalLight(uLight[i].position, uLight[i].color, normalize(norms));
+			    lightsColors += DirectionalLight(uLight[i], norms, normalize(viewDir), vTexCoord);
             }
             else //PointLight
             {
-                lightsColors += PointLight(uLight[i].position, uLight[i].color, norms, fragPos,viewDir);
+                lightsColors += PointLight(uLight[i], norms, fragPos, normalize(viewDir), vTexCoord);
             }
 	}
-    oColor = vec4(lightsColors,1.0)+ vec4(diffuseCol, 1) * 0.2;
+    oColor = vec4(lightsColors + diffuseCol * 0.2, 1.0);
 }
 #endif
 #endif

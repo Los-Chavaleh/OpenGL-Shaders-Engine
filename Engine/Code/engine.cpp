@@ -267,6 +267,7 @@ void Init(App* app)
             texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2,2 });
             break;
         }
+        case Mode::Mode_Deferred:
         {
             app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_GEOMETRY");
             Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
@@ -278,6 +279,9 @@ void Init(App* app)
 
             app->lightsProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_LIGHT");
             Program& light = app->programs[app->lightsProgramIdx];
+            app->texturedMeshProgramIdx_uNormals = glGetUniformLocation(light.handle, "uNormalsTexture");
+            app->texturedMeshProgramIdx_uPosition = glGetUniformLocation(light.handle, "uPositionTexture");
+            app->texturedMeshProgramIdx_uAlbedo = glGetUniformLocation(light.handle, "uAlbedoTexture");
             light.vertexInputLayout.attributes.push_back({ 0, 3 });
             light.vertexInputLayout.attributes.push_back({ 1, 2 });
             break;
@@ -287,12 +291,12 @@ void Init(App* app)
 
     app->model = LoadModel(app, "Patrick/Patrick.obj");
     app->entities.push_back(Entity(glm::mat4(1.f), app->model));
-    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
-    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
+    //app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
+    //app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
 
-    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, 0.0, 0.0), vec3(0.0, -1.0, 1.0), vec3(0.f, -20.f, 0.f)));
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.0,0.8,0.9), vec3(0.0, -1.0, 1.0), vec3(0.f, 1.f, 2.f)));
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.6, 0.2, 0.1), vec3(0.0, -1.0, 1.0), vec3(-2.f, 1.f, 2.f)));
+    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, 1.0, 1.0), vec3(0.0, -1.0, 1.0), vec3(0.f, -20.f, 0.f),0.8));
+    //app->lights.push_back(Light(LightType::LightType_Point, vec3(0.0,0.8,0.9), vec3(0.0, -1.0, 1.0), vec3(0.f, 1.f, 2.f)));
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.6, 0.2, 0.1), vec3(0.0, -1.0, 1.0), vec3(-2.f, 1.f, 2.f),0.8));
 
     //app->camera.SetPosition();
 
@@ -371,7 +375,7 @@ void Init(App* app)
         }
     }
 
-    glDrawBuffers(4, &app->colorController);
+    glDrawBuffers(0, &app->colorController);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
@@ -607,20 +611,17 @@ void Render(App* app)
 
             glUseProgram(app->programs[app->lightsProgramIdx].handle);
 
-            int c = glGetUniformLocation(app->programs[app->lightsProgramIdx].handle, "uPositionTexture");
-            glUniform1i(c, 0);
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, app->positionController);
-
-            int a = glGetUniformLocation(app->programs[app->lightsProgramIdx].handle, "uNormalsTexture");
-            glUniform1i(a, 1);
+            glUniform1i(app->texturedMeshProgramIdx_uPosition, 0);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, app->normalsController);
+            glBindTexture(GL_TEXTURE_2D, app->frameBufferController[&app->positionController]);
 
-            int s = glGetUniformLocation(app->programs[app->lightsProgramIdx].handle, "uAlbedoTexture");
-            glUniform1i(s, 2);
+            glUniform1i(app->texturedMeshProgramIdx_uNormals, 1);
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, app->albedoController);
+            glBindTexture(GL_TEXTURE_2D, app->frameBufferController[&app->normalsController]);
+
+            glUniform1i(app->texturedMeshProgramIdx_uAlbedo, 2);
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, app->frameBufferController[&app->albedoController]);
 
 
 
@@ -640,14 +641,18 @@ void Render(App* app)
                 PushVec3(app->cBuffer, light.direction);
                 PushVec3(app->cBuffer, light.position);
 
+                float constant = 1.0f;
+                float linear = 0.7f;
+                float quadratic = 1.8f;
+                light.intensity = std::fmaxf(std::fmaxf(light.color.r, light.color.g), light.color.b);
+               
+
+                PushFloat(app->cBuffer, light.intensity);
             }
             app->globalParamsSize = app->cBuffer.head - app->globalParamsOffset;
             glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->cBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
             UnmapBuffer(app->cBuffer);
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, app->frameBufferController);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-            glBlitFramebuffer(0, 0, app->displaySize.x, app->displaySize.y, 0, 0, app->displaySize.x, app->displaySize.y, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+            renderQuad();
 
             break;
         }
@@ -656,4 +661,34 @@ void Render(App* app)
     }
 
 
+}
+
+void renderQuad()
+{
+    static unsigned int quadVAO = 0;
+    static unsigned int quadVBO;
+
+    if (quadVAO == 0)
+    {
+        float quadVertices[] = {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
 }

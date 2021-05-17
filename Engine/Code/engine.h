@@ -192,7 +192,9 @@ struct Light
     vec3 color;
     vec3 direction;
     vec3 position;
-    Light(const LightType t, const vec3 c, vec3 dir, vec3 pos) : type(t), color(c), direction(dir), position(pos) {}
+    float intensity;
+
+    Light(const LightType t, const vec3 c, vec3 dir, vec3 pos, float intensity) : type(t), color(c), direction(dir), position(pos), intensity(intensity) {}
 };
 
 struct App
@@ -240,6 +242,10 @@ struct App
     // Location of the texture uniform in the textured quad shader
     GLuint programUniformTexture;
     GLuint texturedMeshProgram_uTexture;
+
+    GLuint texturedMeshProgramIdx_uAlbedo;
+    GLuint texturedMeshProgramIdx_uPosition;
+    GLuint texturedMeshProgramIdx_uNormals;
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
     GLuint frameBufferController;
@@ -269,3 +275,4 @@ void Update(App* app);
 
 void Render(App* app);
 
+void renderQuad();
