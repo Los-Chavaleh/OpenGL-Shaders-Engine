@@ -258,7 +258,7 @@ struct Light{
 	 vec3	color;
 	 vec3	direction;
 	 vec3	position;
-          float 			intensity;
+     float 	intensity;
 };
 
 layout(binding = 0, std140) uniform GlobalParms
@@ -284,25 +284,25 @@ void main() {
 	 vec3	color;
 	 vec3	direction;
 	 vec3	position;
-     float 			intensity;
+     float 	intensity;
 };
 
 vec3 DirectionalLight(Light light, vec3 normal, vec3 view_dir, vec2 texCoords){
-	vec3 ambient = light.color;
-    // Diffuse
-    //vec3 fake_lightDir = normalize(light.lightPos - frag_pos);
-    vec3 lightDir = normalize(-light.direction);
-    float diff = max(dot(lightDir, normal), 0.0);
-    vec3 diffuse = ambient *  diff;
-    
-    // Specular
-    vec3 halfwayDir = normalize(lightDir + view_dir); 
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), 0.0) * 0.01;
+    vec3 lightColor = vec3(1.);
+    // Ambient
+    vec3 ambient = lightColor * 0.15 * light.color;
 
-    vec3 specular = vec3(0);
-    specular = diffuse * spec;
-    // Final Calculation     
-    return (diffuse + specular) * light.intensity;
+    // Diffuse
+    vec3 lightDirection = normalize(-light.position);
+    float diffuseIntensity = max(dot(normal, lightDirection),0.0);
+    vec3 diffuse = diffuseIntensity * lightColor * light.color;
+
+    // Specular
+    float specularStrength = 0.01;
+    float specularIntensity = pow(max(dot(normal, lightDirection),0.0),0.1);
+    vec3 specular = specularStrength * specularIntensity * lightColor;
+    
+    return ambient + diffuse + specular;
 }
 
 vec3 PointLight(Light light, vec3 normal, vec3 frag_pos, vec3 view_dir, vec2 texCoords)
@@ -351,7 +351,7 @@ void main() {
             }
             else //PointLight
             {
-                lightsColors += PointLight(uLight[i], norms, fragPos, normalize(viewDir), vTexCoord);
+                lightsColors += PointLight(uLight[i], norms, fragPos, viewDir, vTexCoord);
             }
 	}
     oColor = vec4(lightsColors + diffuseCol * 0.2, 1.0);

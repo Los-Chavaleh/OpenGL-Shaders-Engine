@@ -271,16 +271,16 @@ void Init(App* app)
         {
             app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_GEOMETRY");
             Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-            app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
+            app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uAlbedoTexture");
             texturedMeshProgram.vertexInputLayout.attributes.push_back({ 0,3 });
             texturedMeshProgram.vertexInputLayout.attributes.push_back({ 1,3 });
             texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2,2 });
-            texturedMeshProgram.vertexInputLayout.attributes.push_back({ 3,3 });
+            //texturedMeshProgram.vertexInputLayout.attributes.push_back({ 3,3 });
 
             app->lightsProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_LIGHT");
             Program& light = app->programs[app->lightsProgramIdx];
-            app->texturedMeshProgramIdx_uNormals = glGetUniformLocation(light.handle, "uNormalsTexture");
             app->texturedMeshProgramIdx_uPosition = glGetUniformLocation(light.handle, "uPositionTexture");
+            app->texturedMeshProgramIdx_uNormals = glGetUniformLocation(light.handle, "uNormalsTexture");
             app->texturedMeshProgramIdx_uAlbedo = glGetUniformLocation(light.handle, "uAlbedoTexture");
             light.vertexInputLayout.attributes.push_back({ 0, 3 });
             light.vertexInputLayout.attributes.push_back({ 1, 2 });
@@ -291,12 +291,12 @@ void Init(App* app)
 
     app->model = LoadModel(app, "Patrick/Patrick.obj");
     app->entities.push_back(Entity(glm::mat4(1.f), app->model));
-    //app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
-    //app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
+    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
+    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
 
-    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, 1.0, 1.0), vec3(0.0, -1.0, 1.0), vec3(0.f, -20.f, 0.f),0.8));
+    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, 0.0, 0.0), vec3(0.0, -1.0, 1.0), vec3(0.f, -20.f, 0.f),0.2));
     //app->lights.push_back(Light(LightType::LightType_Point, vec3(0.0,0.8,0.9), vec3(0.0, -1.0, 1.0), vec3(0.f, 1.f, 2.f)));
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.6, 0.2, 0.1), vec3(0.0, -1.0, 1.0), vec3(-2.f, 1.f, 2.f),0.8));
+    //app->lights.push_back(Light(LightType::LightType_Point, vec3(0.6, 0.2, 0.1), vec3(0.0, -1.0, 1.0), vec3(-2.f, 1.f, 2.f),0.8));
 
     //app->camera.SetPosition();
 
@@ -313,7 +313,7 @@ void Init(App* app)
 
     glGenTextures(1, &app->normalsController);
     glBindTexture(GL_TEXTURE_2D, app->normalsController);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -343,7 +343,7 @@ void Init(App* app)
 
     glGenTextures(1, &app->positionController);
     glBindTexture(GL_TEXTURE_2D, app->positionController);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -375,7 +375,7 @@ void Init(App* app)
         }
     }
 
-    glDrawBuffers(0, &app->colorController);
+    glDrawBuffers(4, &app->colorController);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
@@ -467,7 +467,7 @@ void Render(App* app)
 {
     // - clear the framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, app->frameBufferController);
-    GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,  GL_COLOR_ATTACHMENT2,GL_COLOR_ATTACHMENT3};
+    GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,  GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
     glDrawBuffers(ARRAY_COUNT(drawBuffers), drawBuffers);
 
     glClearColor(0.2f, 0.2f, 0.2f, 1.f);
@@ -613,15 +613,15 @@ void Render(App* app)
 
             glUniform1i(app->texturedMeshProgramIdx_uPosition, 0);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, app->frameBufferController[&app->positionController]);
+            glBindTexture(GL_TEXTURE_2D, app->positionController);
 
             glUniform1i(app->texturedMeshProgramIdx_uNormals, 1);
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, app->frameBufferController[&app->normalsController]);
+            glBindTexture(GL_TEXTURE_2D, app->normalsController);
 
             glUniform1i(app->texturedMeshProgramIdx_uAlbedo, 2);
             glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, app->frameBufferController[&app->albedoController]);
+            glBindTexture(GL_TEXTURE_2D, app->albedoController);
 
 
 
