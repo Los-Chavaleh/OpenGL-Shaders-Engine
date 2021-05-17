@@ -224,6 +224,7 @@ struct App
     u32 texturedMeshProgramIdx;
     u32 meshProgramIdx;
     u32 lightsProgramIdx;
+	u32 drawLightsProgramIdx;
     // texture indices
     u32 diceTexIdx;
     u32 whiteTexIdx;
@@ -254,6 +255,11 @@ struct App
     GLuint normalsController;
     GLuint albedoController;
     GLuint positionController;
+
+	// Draw Sphere light
+	GLuint drawLightsProgramIdx_uLightColor;
+	GLuint drawLightsProgramIdx_uViewProjection;
+	GLuint drawLightsProgramIdx_uModel;
     // GPU Info
     OpenGLInfo oglInfo;
 
@@ -263,6 +269,7 @@ struct App
     GLuint globalParamsOffset;
     GLuint globalParamsSize;
     int uniformBlockAlignmentOffset;
+	bool showGizmo = true;
 };
 
 u32 LoadTexture2D(App* app, const char* filepath);
@@ -276,3 +283,6 @@ void Update(App* app);
 void Render(App* app);
 
 void renderQuad();
+void RenderSphere();
+void RenderCube();
+

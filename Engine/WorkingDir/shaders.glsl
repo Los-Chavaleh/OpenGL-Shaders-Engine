@@ -236,7 +236,7 @@ void main() {
     
     oAlbedo   =   texture(uTexture, vTexCoord);
     oPosition = vec4(vPosition, 1.0);
-    gl_FragDepth = gl_FragCoord.z - 0.2;
+    //gl_FragDepth = gl_FragCoord.z - 0.2;
 }
 
 #endif
@@ -359,3 +359,28 @@ void main() {
 #endif
 #endif
 
+#ifdef DRAW_LIGHTS
+
+#if defined(VERTEX) ///////////////////////////////////////////////////
+
+layout(location=0) in vec3 aPosition;
+
+uniform mat4 projectionView;
+uniform mat4 model;
+
+void main() {
+	gl_Position = projectionView * model * vec4(aPosition, 1.0);
+}
+
+#elif defined(FRAGMENT) ///////////////////////////////////////////////
+
+layout(location = 0) out vec4 oColor;
+
+uniform vec3 lightColor;
+
+void main() {
+	oColor = vec4(lightColor, 1.0);
+}
+
+#endif
+#endif
