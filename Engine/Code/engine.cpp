@@ -9,7 +9,6 @@
 #include <imgui.h>
 #include <stb_image.h>
 #include <stb_image_write.h>
-#include <iostream>
 
 #include "assimp_model_loading.h"
 #include "buffer_management.h"
@@ -232,7 +231,6 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
 
 void Init(App* app)
 {
-	app->camera.cameraPos = { app->camera.distanceToOrigin * sin(app->camera.Phi) * cos(app->camera.Theta), app->camera.distanceToOrigin * cos(app->camera.Phi), app->camera.distanceToOrigin * sin(app->camera.Phi) * sin(app->camera.Theta) };
 	app->firstMouse = true;
 
     InitGPUInfo(app);
@@ -270,24 +268,28 @@ void Gui(App* app)
 	ImGui::InputFloat("Pitch", &app->camera.pitch);
 	ImGui::InputFloat("Sensitivity", &app->input.sensitivity);
 
-	ImGui::Checkbox("Show Light Gizmo", &app->showGizmo);
     ImGui::Separator();
 
-    static const char* controllers[] = { "Render", "Albedo", "Normals", "Depth", "Position"};
+    static const char* controllers[] = {"Albedo", "Normals", "Depth", "Position"};
 
 	ImGui::Text("Lights");
-	for (int i = 0; i < app->lights.size(); ++i) {
-		ImGui::PushID(i);
-		if (app->lights[i].type == 0) { //Directional
-			ImGui::DragFloat3("direction", glm::value_ptr(app->lights[i].direction), 0.01f);
+
+	ImGui::Checkbox("Show Light Gizmo", &app->showGizmo);
+
+	if (ImGui::CollapsingHeader("Light Inspector")) {
+		for (int i = 0; i < app->lights.size(); ++i) {
+			ImGui::PushID(i);
+			if (app->lights[i].type == 0) { //Directional
+				ImGui::DragFloat3("direction", glm::value_ptr(app->lights[i].direction), 0.01f);
+			}
+			else {
+				ImGui::DragFloat3("position", glm::value_ptr(app->lights[i].position), 0.01f);
+			}
+			ImGui::DragFloat3("color", glm::value_ptr(app->lights[i].color), 0.01f);
+			ImGui::DragFloat("intensity", &app->lights[i].intensity, 0.01f);
+			ImGui::PopID();
+			ImGui::NewLine();
 		}
-		else {
-			ImGui::DragFloat3("position", glm::value_ptr(app->lights[i].position), 0.01f);
-		}
-		ImGui::DragFloat3("color", glm::value_ptr(app->lights[i].color), 0.01f);
-        ImGui::DragFloat("intensity", &app->lights[i].intensity, 0.01f);
-		ImGui::PopID();
-		ImGui::NewLine();
 	}
 
 	ImGui::Separator();
@@ -295,7 +297,7 @@ void Gui(App* app)
     static int sel = 0;
     ImGui::Text("Target render");
     if (ImGui::BeginCombo("Target", controllers[sel])) {
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < 4; ++i)
             if (ImGui::Selectable(controllers[i])) sel = i;
         ImGui::EndCombo();
     }
@@ -304,18 +306,15 @@ void Gui(App* app)
     switch (sel)
     {
     case 0:
-        texture = app->colorController;
-        break;
-    case 1:
         texture = app->albedoController;
         break;
-    case 2:
+    case 1:
         texture = app->normalsController;
         break;
-    case 3:
+    case 2:
         texture = app->depthController;
         break;
-    case 4:
+    case 3:
         texture = app->positionController;
         break;
     default:
@@ -344,8 +343,48 @@ void Update(App* app)
 		app->camera.cameraPos -= glm::normalize(glm::cross(app->camera.cameraFront, app->camera.cameraUp)) * cameraSpeed;
 	if (app->input.keys[K_D] == ButtonState::BUTTON_PRESSED)
 		app->camera.cameraPos += glm::normalize(glm::cross(app->camera.cameraFront, app->camera.cameraUp)) * cameraSpeed;
+	if (app->input.keys[K_R] == ButtonState::BUTTON_PRESSED) 
+		app->camera.cameraPos += app->camera.cameraUp * 20.f * app->deltaTime;
+	if (app->input.keys[K_F] == ButtonState::BUTTON_PRESSED) 
+		app->camera.cameraPos -= app->camera.cameraUp * 20.f * app->deltaTime;
 
+	if (app->input.mouseButtons[LEFT] == ButtonState::BUTTON_PRESSED)
+	{
+		app->camera.rotating = true;
 
+		app->camera.yaw += app->input.mouseDelta.x * app->deltaTime * 20.f;
+		app->camera.pitch -= app->input.mouseDelta.y * app->deltaTime * 20.f;
+
+		if (app->camera.pitch > 89.0f)
+			app->camera.pitch = 89.0f;
+		if (app->camera.pitch < -89.0f)
+			app->camera.pitch = -89.0f;
+
+		
+		/*app->input.mouseDelta.x = xpos - app->input.mousePos.x;
+		app->input.mouseDelta.y = app->input.mousePos.y - ypos;
+		app->input.mousePos.x = xpos;
+		app->input.mousePos.y = ypos;
+
+		app->input.mouseDelta.x *= app->input.sensitivity;
+		app->input.mouseDelta.y *= app->input.sensitivity;
+
+		app->camera.yaw += app->input.mouseDelta.x;
+		app->camera.pitch += app->input.mouseDelta.y;
+
+		if (app->camera.pitch > 89.0f)
+			app->camera.pitch = 89.0f;
+		if (app->camera.pitch < -89.0f)
+			app->camera.pitch = -89.0f;ç*/
+
+		glm::vec3 direction;
+		direction.x = cos(glm::radians(app->camera.yaw)) * cos(glm::radians(app->camera.pitch));
+		direction.y = sin(glm::radians(app->camera.pitch));
+		direction.z = sin(glm::radians(app->camera.yaw)) * cos(glm::radians(app->camera.pitch));
+		app->camera.cameraFront = glm::normalize(direction);
+	}
+	else
+		app->camera.rotating = false;
 
 }
 
@@ -423,7 +462,7 @@ void Render(App* app)
                 AlignHead(app->cBuffer, app->uniformBlockAlignmentOffset);
                 app->entities[i].localParamsOffset = app->cBuffer.head;
                 PushMat4(app->cBuffer, app->entities[i].matrix);
-                PushMat4(app->cBuffer, app->camera.GetViewMatrix(app->camera.cameraPos, app->displaySize));
+                PushMat4(app->cBuffer, app->camera.GetViewMatrix(app->displaySize));
                 app->entities[i].localParamsSize = app->cBuffer.head - app->entities[i].localParamsOffset;
 
                 glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->cBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
@@ -470,7 +509,7 @@ void Render(App* app)
                 AlignHead(app->cBuffer, app->uniformBlockAlignmentOffset);
                 app->entities[i].localParamsOffset = app->cBuffer.head;
                 PushMat4(app->cBuffer, app->entities[i].matrix);
-                PushMat4(app->cBuffer, app->camera.GetViewMatrix(app->camera.cameraPos, app->displaySize));
+                PushMat4(app->cBuffer, app->camera.GetViewMatrix(app->displaySize));
                 app->entities[i].localParamsSize = app->cBuffer.head - app->entities[i].localParamsOffset;
 
                 glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->cBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
@@ -542,7 +581,7 @@ void Render(App* app)
 
 				glUseProgram(app->programs[app->drawLightsProgramIdx].handle);
 
-				glUniformMatrix4fv(app->drawLightsProgramIdx_uViewProjection, 1, GL_FALSE, glm::value_ptr(app->camera.GetViewMatrix(app->camera.cameraPos, app->displaySize)));
+				glUniformMatrix4fv(app->drawLightsProgramIdx_uViewProjection, 1, GL_FALSE, glm::value_ptr(app->camera.GetViewMatrix(app->displaySize)));
 				for (unsigned int i = 0; i < app->lights.size(); ++i) {
 
 					glm::mat4 mat = glm::mat4(1.f);
@@ -574,6 +613,8 @@ void CreateAllObjects(App* app)
     app->entities.push_back(Entity(glm::mat4(1.f), app->model));
     app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
     app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
+	app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-3.f, 0.f, -6.f)), app->model));
+	app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(3.f, 0.f, -6.f)), app->model));
 
     app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, -0.5, 0.0), vec3(0.0, -1.0, 1.0), vec3(0.f, 4.f, 0.f), 0.2)); //RED
     app->lights.push_back(Light(LightType::LightType_Directional, vec3(0.0, 1.0, 1.0), vec3(-1.0, -1.0, 0.0), vec3(4.f, 4.f, 0.f), 0.2)); //BLUE
@@ -583,7 +624,7 @@ void CreateAllObjects(App* app)
     app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.9, 0.1), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 3.0f, -0.3f), 0.9)); //YELLOW
     app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.04, 1.0), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 0.86f, -5.6f), 0.8)); //ROSE   
     app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.65, 1.0, -0.85), vec3(0.0, -1.0, 1.0), vec3(-3.6f, -0.95f, -4.03f), 0.7)); //LIGHT GREEN
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.5, -0.07, 0.23), vec3(0.0, -1.0, 1.0), vec3(4.0f, 1.76f, -6.53f), 0.9)); //DARK BLUE
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.5, -0.07, 0.23), vec3(0.0, -1.0, 1.0), vec3(4.0f, 1.76f, -6.53f), 2.0)); //DARK BLUE
     app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.52, -0.15), vec3(0.0, -1.0, 1.0), vec3(0.55f, 0.01f, -3.f), 0.9)); //ORANGE
 
 }

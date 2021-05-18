@@ -7,6 +7,8 @@
 #include "platform.h"
 #include <glad/glad.h>
 #include "assimp_model_loading.h"
+#include <map>
+
 #include <glm/gtx/quaternion.hpp>
 
 typedef glm::vec2  vec2;
@@ -146,25 +148,23 @@ struct Camera {
     float yaw = -90.f;
 
     float distanceToOrigin = 10.f;
-    float phi{ 90.f }, theta{ 90.f };
-	float Phi = glm::radians(phi);
-	float Theta = glm::radians(theta);
 
-	glm::vec3 cameraPos = { distanceToOrigin * sin(Phi) * cos(Theta), distanceToOrigin * cos(Phi), distanceToOrigin * sin(Phi) * sin(Theta) };
-	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
+	bool rotating = true;
 
-	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
-	glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
+	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 10.0f);;
+
+	glm::vec3 cameraRight = glm::vec3(0.0f, 0.0f, -1.0f);
+	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 
 	float fov = 60.f;
 
-    glm::mat4 GetViewMatrix(const vec3& camPos, const vec2& size) {
+    glm::mat4 GetViewMatrix(const vec2& size) {
         // Make sure that: 0 < phi < 3.14
+		float Phi = glm::radians(pitch);
+		float Theta = glm::radians(yaw);
 
-		glm::mat4 view = glm::lookAt(camPos, camPos + cameraFront, cameraUp);
+		glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
         return glm::perspective(glm::radians(fov), size.x / size.y, 0.1f, 100.f) * view;
     }

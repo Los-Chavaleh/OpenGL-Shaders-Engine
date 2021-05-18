@@ -41,37 +41,19 @@ void OnGlfwMouseMoveEvent(GLFWwindow* window, double xpos, double ypos)
 
 	App* app = (App*)glfwGetWindowUserPointer(window);
 
-	if (app->input.mouseButtons[LEFT] == ButtonState::BUTTON_PRESSED)
+	if (app->firstMouse)
 	{
-		if (app->firstMouse)
-		{
-			app->input.mouseDelta.x = xpos;
-			app->input.mouseDelta.y = ypos;
-			app->firstMouse = false;
-		}
-
-		app->input.mouseDelta.x = xpos - app->input.mousePos.x;
-		app->input.mouseDelta.y = app->input.mousePos.y - ypos;
 		app->input.mousePos.x = xpos;
 		app->input.mousePos.y = ypos;
-
-		app->input.mouseDelta.x *= app->input.sensitivity;
-		app->input.mouseDelta.y *= app->input.sensitivity;
-
-		app->camera.yaw += app->input.mouseDelta.x;
-		app->camera.pitch += app->input.mouseDelta.y;
-
-		if (app->camera.pitch > 89.0f)
-			app->camera.pitch = 89.0f;
-		if (app->camera.pitch < -89.0f)
-			app->camera.pitch = -89.0f;
-
-		glm::vec3 direction;
-		direction.x = cos(glm::radians(app->camera.yaw)) * cos(glm::radians(app->camera.pitch));
-		direction.y = sin(glm::radians(app->camera.pitch));
-		direction.z = sin(glm::radians(app->camera.yaw)) * cos(glm::radians(app->camera.pitch));
-		app->camera.cameraFront = glm::normalize(direction);
+		app->firstMouse = false;
 	}
+
+	app->input.mouseDelta.x = xpos - app->input.mousePos.x;
+	app->input.mouseDelta.y = ypos - app->input.mousePos.y;
+	app->input.mousePos.x = xpos;
+	app->input.mousePos.y = ypos;
+
+	
 }
 
 void OnGlfwMouseEvent(GLFWwindow* window, int button, int event, int modifiers)
@@ -130,6 +112,8 @@ void OnGlfwKeyboardEvent(GLFWwindow* window, int key, int scancode, int action, 
         case GLFW_PRESS:   app->input.keys[key] = BUTTON_PRESS; break;
         case GLFW_RELEASE: app->input.keys[key] = BUTTON_RELEASE; break;
     }
+
+
 }
 
 void OnGlfwCharEvent(GLFWwindow* window, unsigned int character)
