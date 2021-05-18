@@ -277,7 +277,11 @@ u32 LoadTexture2D(App* app, const char* filepath);
 
 void Init(App* app);
 
+void InitGPUInfo(App* app);
+
 void InitTextureBuffers(App* app);
+
+void InitModes(App* app);
 
 void CreateAllObjects(App* app);
 

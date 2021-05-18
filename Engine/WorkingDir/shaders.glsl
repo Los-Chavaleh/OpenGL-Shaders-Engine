@@ -223,7 +223,7 @@ in vec3 vNormals;
 in vec3 vViewDir;
 in vec3 vPosition;
 
-uniform sampler2D uTexture;
+uniform sampler2D uAlbedoTexture;
 
 layout(location = 0) out vec4 oColor;
 layout(location = 1) out vec4 oNormals;
@@ -231,10 +231,10 @@ layout(location = 2) out vec4 oAlbedo;
 layout(location = 3) out vec4 oPosition;
 void main() {
 
-	oColor 		= texture(uTexture, vTexCoord);
+	oColor 		= texture(uAlbedoTexture, vTexCoord);
 	oNormals 	= vec4(vNormals, 1.0);
     
-    oAlbedo   =   texture(uTexture, vTexCoord);
+    oAlbedo   =   texture(uAlbedoTexture, vTexCoord);
     oPosition = vec4(vPosition, 1.0);
     gl_FragDepth = gl_FragCoord.z - 0.2;
 }

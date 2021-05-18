@@ -235,68 +235,13 @@ void Init(App* app)
 	app->camera.cameraPos = { app->camera.distanceToOrigin * sin(app->camera.Phi) * cos(app->camera.Theta), app->camera.distanceToOrigin * cos(app->camera.Phi), app->camera.distanceToOrigin * sin(app->camera.Phi) * sin(app->camera.Theta) };
 	app->firstMouse = true;
 
-    // RETRIEVE INFO FROM GPU
-    app->oglInfo.version = glGetString(GL_VERSION);
-    app->oglInfo.renderer = glGetString(GL_RENDERER);
-    app->oglInfo.vendor = glGetString(GL_VENDOR);
-    app->oglInfo.shadingLanguageVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
-    GLint num_extensions;
-    glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
-    for (int i = 0; i < num_extensions; ++i)
-    {
-        app->oglInfo.extensions = glGetStringi(GL_EXTENSIONS, GLuint(i));
-    }
+    InitGPUInfo(app);
 
-
-    GLint maxBufferSize;
-    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignmentOffset);
-    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxBufferSize);
-    app->cBuffer = CreateBuffer(maxBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
-
-    // MODES INITIALIZATION
-    app->mode = Mode::Mode_Deferred;
-    switch (app->mode)
-    {
-        case Mode::Mode_Forward:
-        {
-            app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_TEXTURED_MESH");
-            Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-            app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
-            texturedMeshProgram.vertexInputLayout.attributes.push_back({ 0,3 });
-            texturedMeshProgram.vertexInputLayout.attributes.push_back({ 1,3 });
-            texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2,2 });
-            break;
-        }
-        case Mode::Mode_Deferred:
-        {
-            app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_GEOMETRY");
-            Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-            app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uAlbedoTexture");
-            texturedMeshProgram.vertexInputLayout.attributes.push_back({ 0,3 });
-            texturedMeshProgram.vertexInputLayout.attributes.push_back({ 1,3 });
-            texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2,2 });
-
-            app->lightsProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_LIGHT");
-            Program& light = app->programs[app->lightsProgramIdx];
-            app->texturedMeshProgramIdx_uPosition = glGetUniformLocation(light.handle, "uPositionTexture");
-            app->texturedMeshProgramIdx_uNormals = glGetUniformLocation(light.handle, "uNormalsTexture");
-            app->texturedMeshProgramIdx_uAlbedo = glGetUniformLocation(light.handle, "uAlbedoTexture");
-            light.vertexInputLayout.attributes.push_back({ 0, 3 });
-            light.vertexInputLayout.attributes.push_back({ 1, 2 });
-
-			app->drawLightsProgramIdx = LoadProgram(app, "shaders.glsl", "DRAW_LIGHT");
-			Program& texturedSphereLightProgram = app->programs[app->drawLightsProgramIdx];
-			app->drawLightsProgramIdx_uLightColor = glGetUniformLocation(texturedSphereLightProgram.handle, "lightColor");
-			app->drawLightsProgramIdx_uViewProjection = glGetUniformLocation(texturedSphereLightProgram.handle, "projectionView");
-			app->drawLightsProgramIdx_uModel = glGetUniformLocation(texturedSphereLightProgram.handle, "model");
-			texturedSphereLightProgram.vertexInputLayout.attributes.push_back({ 0, 3 });
-            break;
-        }
-    }
-
-    CreateAllObjects(app);
+    InitModes(app);
 
     InitTextureBuffers(app);
+
+    CreateAllObjects(app);
 
 }
 
@@ -641,6 +586,72 @@ void CreateAllObjects(App* app)
     app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.5, -0.07, 0.23), vec3(0.0, -1.0, 1.0), vec3(4.0f, 1.76f, -6.53f), 0.9)); //DARK BLUE
     app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.52, -0.15), vec3(0.0, -1.0, 1.0), vec3(0.55f, 0.01f, -3.f), 0.9)); //ORANGE
 
+}
+
+void InitGPUInfo(App* app)
+{
+    app->oglInfo.version = glGetString(GL_VERSION);
+    app->oglInfo.renderer = glGetString(GL_RENDERER);
+    app->oglInfo.vendor = glGetString(GL_VENDOR);
+    app->oglInfo.shadingLanguageVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    GLint num_extensions;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
+    for (int i = 0; i < num_extensions; ++i)
+    {
+        app->oglInfo.extensions = glGetStringi(GL_EXTENSIONS, GLuint(i));
+    }
+}
+
+void InitModes(App* app)
+{
+    GLint maxBufferSize;
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAlignmentOffset);
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxBufferSize);
+    app->cBuffer = CreateBuffer(maxBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
+
+    // MODES INITIALIZATION
+    app->mode = Mode::Mode_Deferred;
+    switch (app->mode)
+    {
+    case Mode::Mode_Forward:
+    {
+        app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_TEXTURED_MESH");
+        Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+        app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
+        texturedMeshProgram.vertexInputLayout.attributes.push_back({ 0,3 });
+        texturedMeshProgram.vertexInputLayout.attributes.push_back({ 1,3 });
+        texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2,2 });
+        break;
+    }
+    case Mode::Mode_Deferred:
+    {
+        //MESH SHADER
+        app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_GEOMETRY");
+        Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+        app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uAlbedoTexture");
+        texturedMeshProgram.vertexInputLayout.attributes.push_back({ 0,3 });
+        texturedMeshProgram.vertexInputLayout.attributes.push_back({ 1,3 });
+        texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2,2 });
+
+        // LIGHT SHADER
+        app->lightsProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_LIGHT");
+        Program& light = app->programs[app->lightsProgramIdx];
+        app->texturedMeshProgramIdx_uPosition = glGetUniformLocation(light.handle, "uPositionTexture");
+        app->texturedMeshProgramIdx_uNormals = glGetUniformLocation(light.handle, "uNormalsTexture");
+        app->texturedMeshProgramIdx_uAlbedo = glGetUniformLocation(light.handle, "uAlbedoTexture");
+        light.vertexInputLayout.attributes.push_back({ 0, 3 });
+        light.vertexInputLayout.attributes.push_back({ 1, 2 });
+
+        //LIGHT GIZMO SHADER
+        app->drawLightsProgramIdx = LoadProgram(app, "shaders.glsl", "DRAW_LIGHT");
+        Program& texturedSphereLightProgram = app->programs[app->drawLightsProgramIdx];
+        app->drawLightsProgramIdx_uLightColor = glGetUniformLocation(texturedSphereLightProgram.handle, "lightColor");
+        app->drawLightsProgramIdx_uViewProjection = glGetUniformLocation(texturedSphereLightProgram.handle, "projectionView");
+        app->drawLightsProgramIdx_uModel = glGetUniformLocation(texturedSphereLightProgram.handle, "model");
+        texturedSphereLightProgram.vertexInputLayout.attributes.push_back({ 0, 3 });
+        break;
+    }
+    }
 }
 
 void InitTextureBuffers(App* app)
