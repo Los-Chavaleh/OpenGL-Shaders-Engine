@@ -236,7 +236,7 @@ void main() {
     
     oAlbedo   =   texture(uTexture, vTexCoord);
     oPosition = vec4(vPosition, 1.0);
-    //gl_FragDepth = gl_FragCoord.z - 0.2;
+    gl_FragDepth = gl_FragCoord.z - 0.2;
 }
 
 #endif
