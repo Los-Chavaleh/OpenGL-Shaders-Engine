@@ -247,6 +247,7 @@ struct App
     GLuint texturedMeshProgramIdx_uAlbedo;
     GLuint texturedMeshProgramIdx_uPosition;
     GLuint texturedMeshProgramIdx_uNormals;
+    GLuint texturedMeshProgramIdx_uDepth;
     // VAO object to link our screen filling quad with our textured quad shader
     GLuint vao;
     GLuint frameBufferController;

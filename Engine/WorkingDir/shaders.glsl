@@ -236,7 +236,7 @@ void main() {
     
     oAlbedo   =   texture(uTexture, vTexCoord);
     oPosition = vec4(vPosition, 1.0);
-    //gl_FragDepth = gl_FragCoord.z - 0.2;
+    gl_FragDepth = gl_FragCoord.z - 0.2;
 }
 
 #endif
@@ -294,13 +294,13 @@ vec3 DirectionalLight(Light light, vec3 normal, vec3 view_dir, vec2 texCoords){
 
     // Diffuse
     vec3 lightDirection = normalize(-light.position);
-    float diffuseIntensity = max(dot(normal, lightDirection),0.0);
+    float diffuseIntensity = max(dot(normal, light.direction),0.0);
     vec3 diffuse = diffuseIntensity * lightColor * light.color;
 
     // Specular
     float specularStrength = 0.01;
     float specularIntensity = pow(max(dot(normal, lightDirection),0.0),0.1);
-    vec3 specular = specularStrength * specularIntensity * lightColor;
+    vec3 specular = specularStrength * specularIntensity * lightColor * light.intensity;
     
     return ambient + diffuse + specular;
 }
@@ -319,7 +319,7 @@ vec3 PointLight(Light light, vec3 normal, vec3 frag_pos, vec3 view_dir, vec2 tex
     // attenuati
     float distance = length(light.position - frag_pos);
     float attenuation = 1/distance;      
-	return (diffuse + specular) * attenuation;
+	return (diffuse + specular) * attenuation * light.intensity;
 }
 
 layout(binding = 0, std140) uniform GlobalParms
@@ -345,21 +345,22 @@ void main() {
 	vec3 viewDir = normalize(uCameraPosition - fragPos);
 	vec3 lightsColors = vec3(0.0,0.0,0.0);
 	for(int i = 0; i < uLightCount; ++i)
-	{		if(uLight[i].type == 0) //Directional
-            {
-			    lightsColors += DirectionalLight(uLight[i], norms, normalize(viewDir), vTexCoord);
-            }
-            else //PointLight
-            {
-                lightsColors += PointLight(uLight[i], norms, fragPos, viewDir, vTexCoord);
-            }
+	{		
+        if(uLight[i].type == 0) //Directional
+        {
+			lightsColors += DirectionalLight(uLight[i], norms, normalize(viewDir), vTexCoord);
+        }
+        else //PointLight
+        {
+            lightsColors += PointLight(uLight[i], norms, fragPos, viewDir, vTexCoord);
+        }
 	}
     oColor = vec4(lightsColors + diffuseCol * 0.2, 1.0);
 }
 #endif
 #endif
 
-#ifdef DRAW_LIGHTS
+#ifdef DRAW_LIGHT
 
 #if defined(VERTEX) ///////////////////////////////////////////////////
 
@@ -380,6 +381,7 @@ uniform vec3 lightColor;
 
 void main() {
 	oColor = vec4(lightColor, 1.0);
+    gl_FragDepth = gl_FragCoord.z - 0.2;
 }
 
 #endif

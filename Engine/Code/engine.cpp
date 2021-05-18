@@ -285,7 +285,7 @@ void Init(App* app)
             light.vertexInputLayout.attributes.push_back({ 0, 3 });
             light.vertexInputLayout.attributes.push_back({ 1, 2 });
 
-			app->drawLightsProgramIdx = LoadProgram(app, "shaders.glsl", "DRAW_LIGHTS");
+			app->drawLightsProgramIdx = LoadProgram(app, "shaders.glsl", "DRAW_LIGHT");
 			Program& texturedSphereLightProgram = app->programs[app->drawLightsProgramIdx];
 			app->drawLightsProgramIdx_uLightColor = glGetUniformLocation(texturedSphereLightProgram.handle, "lightColor");
 			app->drawLightsProgramIdx_uViewProjection = glGetUniformLocation(texturedSphereLightProgram.handle, "projectionView");
@@ -301,9 +301,16 @@ void Init(App* app)
     app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
     app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
 
-    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, 0.0, 0.0), vec3(0.0, -1.0, 1.0), vec3(0.f, 4.f, 0.f),0.2));
-    //app->lights.push_back(Light(LightType::LightType_Point, vec3(0.0,0.8,0.9), vec3(0.0, -1.0, 1.0), vec3(0.f, 1.f, 2.f)));
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.6, 0.2, 0.1), vec3(0.0, -1.0, 1.0), vec3(-2.f, 1.f, 2.f),0.8));
+    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, -0.5, 0.0), vec3(0.0, -1.0, 1.0), vec3(0.f, 4.f, 0.f), 0.2)); //RED
+    app->lights.push_back(Light(LightType::LightType_Directional, vec3(0.0, 1.0, 1.0), vec3(-1.0, -1.0, 0.0), vec3(4.f, 4.f, 0.f), 0.2)); //BLUE
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.0, 0.8, 0.9), vec3(0.0, -1.0, 1.0), vec3(2.f, -1.6f, 2.f), 0.7)); //LIGHT BLUE
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.6, 0.2, 0.1), vec3(0.0, -1.0, 1.0), vec3(-2.f, 1.f, 2.f), 0.8)); //BROWN   
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.2, 0.8, 0.2), vec3(0.0, -1.0, 1.0), vec3(6.4f, -0.05f, -2.5f), 0.7)); //GREEN
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.9, 0.1), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 3.0f, -0.3f), 0.9)); //YELLOW
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.04, 1.0), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 0.86f, -5.6f), 0.8)); //ROSE   
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.65, 1.0, -0.85), vec3(0.0, -1.0, 1.0), vec3(-3.6f, -0.95f, -4.03f), 0.7)); //LIGHT GREEN
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.5, -0.07, 0.23), vec3(0.0, -1.0, 1.0), vec3(4.0f, 1.76f, -6.53f), 0.9)); //DARK BLUE
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.52, -0.15), vec3(0.0, -1.0, 1.0), vec3(0.55f, 0.01f, -3.f), 0.9)); //ORANGE
 
     //app->camera.SetPosition();
 
@@ -427,6 +434,7 @@ void Gui(App* app)
 			ImGui::DragFloat3("position", glm::value_ptr(app->lights[i].position), 0.01f);
 		}
 		ImGui::DragFloat3("color", glm::value_ptr(app->lights[i].color), 0.01f);
+        ImGui::DragFloat("intensity", &app->lights[i].intensity, 0.01f);
 		ImGui::PopID();
 		ImGui::NewLine();
 	}
@@ -626,10 +634,10 @@ void Render(App* app)
 
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, app->textures[submeshmaterial.albedoTextureIdx].handle);
-                    glUniform1i(app->texturedMeshProgram_uTexture, 0);
+                    glUniform1i(app->programUniformTexture, 0);
 
                     Submesh& submesh = mesh.submeshes[i];
-                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)submesh.indexOffset);
+                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
                 }
             }
 
@@ -650,8 +658,6 @@ void Render(App* app)
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, app->albedoController);
 
-
-
             AlignHead(app->cBuffer, app->uniformBlockAlignmentOffset);
 
             app->globalParamsOffset = app->cBuffer.head;
@@ -659,22 +665,15 @@ void Render(App* app)
             PushVec3(app->cBuffer, app->camera.cameraPos);
             PushUInt(app->cBuffer, app->lights.size());
 
-            for (auto& light : app->lights)
+            for (int i = 0; i < app->lights.size(); ++i)
             {
                 AlignHead(app->cBuffer, sizeof(glm::vec4));
 
-                PushUInt(app->cBuffer, light.type);
-                PushVec3(app->cBuffer, light.color);
-                PushVec3(app->cBuffer, light.direction);
-                PushVec3(app->cBuffer, light.position);
-
-                float constant = 1.0f;
-                float linear = 0.7f;
-                float quadratic = 1.8f;
-                light.intensity = std::fmaxf(std::fmaxf(light.color.r, light.color.g), light.color.b);
-               
-
-                PushFloat(app->cBuffer, light.intensity);
+                PushUInt(app->cBuffer, app->lights[i].type);
+                PushVec3(app->cBuffer, app->lights[i].color);
+                PushVec3(app->cBuffer, app->lights[i].direction);
+                PushVec3(app->cBuffer, app->lights[i].position);
+                PushFloat(app->cBuffer, app->lights[i].intensity);
             }
             app->globalParamsSize = app->cBuffer.head - app->globalParamsOffset;
             glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->cBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
