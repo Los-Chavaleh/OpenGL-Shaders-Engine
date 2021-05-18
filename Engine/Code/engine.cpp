@@ -285,7 +285,7 @@ void Init(App* app)
             light.vertexInputLayout.attributes.push_back({ 0, 3 });
             light.vertexInputLayout.attributes.push_back({ 1, 2 });
 
-			app->drawLightsProgramIdx = LoadProgram(app, "shaders.glsl", "DRAW_LIGHTS");
+			app->drawLightsProgramIdx = LoadProgram(app, "shaders.glsl", "DRAW_LIGHT");
 			Program& texturedSphereLightProgram = app->programs[app->drawLightsProgramIdx];
 			app->drawLightsProgramIdx_uLightColor = glGetUniformLocation(texturedSphereLightProgram.handle, "lightColor");
 			app->drawLightsProgramIdx_uViewProjection = glGetUniformLocation(texturedSphereLightProgram.handle, "projectionView");
@@ -434,6 +434,7 @@ void Gui(App* app)
 			ImGui::DragFloat3("position", glm::value_ptr(app->lights[i].position), 0.01f);
 		}
 		ImGui::DragFloat3("color", glm::value_ptr(app->lights[i].color), 0.01f);
+        ImGui::DragFloat("intensity", &app->lights[i].intensity, 0.01f);
 		ImGui::PopID();
 		ImGui::NewLine();
 	}
@@ -633,10 +634,10 @@ void Render(App* app)
 
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, app->textures[submeshmaterial.albedoTextureIdx].handle);
-                    glUniform1i(app->texturedMeshProgram_uTexture, 0);
+                    glUniform1i(app->programUniformTexture, 0);
 
                     Submesh& submesh = mesh.submeshes[i];
-                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)submesh.indexOffset);
+                    glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
                 }
             }
 
@@ -666,22 +667,14 @@ void Render(App* app)
             PushVec3(app->cBuffer, app->camera.cameraPos);
             PushUInt(app->cBuffer, app->lights.size());
 
-            for (auto& light : app->lights)
+            for (int i = 0; i < app->lights.size(); ++i)
             {
                 AlignHead(app->cBuffer, sizeof(glm::vec4));
-
-                PushUInt(app->cBuffer, light.type);
-                PushVec3(app->cBuffer, light.color);
-                PushVec3(app->cBuffer, light.direction);
-                PushVec3(app->cBuffer, light.position);
-
-                float constant = 1.0f;
-                float linear = 0.7f;
-                float quadratic = 1.8f;
-                light.intensity = std::fmaxf(std::fmaxf(light.color.r, light.color.g), light.color.b);
-               
-
-                PushFloat(app->cBuffer, light.intensity);
+                PushUInt(app->cBuffer, app->lights[i].type);
+                PushVec3(app->cBuffer, app->lights[i].color);
+                PushVec3(app->cBuffer, app->lights[i].direction);
+                PushVec3(app->cBuffer, app->lights[i].position);
+                PushFloat(app->cBuffer, app->lights[i].intensity);
             }
             app->globalParamsSize = app->cBuffer.head - app->globalParamsOffset;
             glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->cBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
