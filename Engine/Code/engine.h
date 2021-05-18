@@ -277,6 +277,10 @@ u32 LoadTexture2D(App* app, const char* filepath);
 
 void Init(App* app);
 
+void InitTextureBuffers(App* app);
+
+void CreateAllObjects(App* app);
+
 void Gui(App* app);
 
 void Update(App* app);
@@ -286,4 +290,5 @@ void Render(App* app);
 void renderQuad();
 void RenderSphere();
 void RenderCube();
+
 

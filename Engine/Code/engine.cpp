@@ -275,7 +275,6 @@ void Init(App* app)
             texturedMeshProgram.vertexInputLayout.attributes.push_back({ 0,3 });
             texturedMeshProgram.vertexInputLayout.attributes.push_back({ 1,3 });
             texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2,2 });
-            //texturedMeshProgram.vertexInputLayout.attributes.push_back({ 3,3 });
 
             app->lightsProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_LIGHT");
             Program& light = app->programs[app->lightsProgramIdx];
@@ -295,102 +294,9 @@ void Init(App* app)
         }
     }
 
+    CreateAllObjects(app);
 
-    app->model = LoadModel(app, "Patrick/Patrick.obj");
-    app->entities.push_back(Entity(glm::mat4(1.f), app->model));
-    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
-    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
-
-    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, -0.5, 0.0), vec3(0.0, -1.0, 1.0), vec3(0.f, 4.f, 0.f),0.2)); //RED
-    app->lights.push_back(Light(LightType::LightType_Directional, vec3(0.0, 1.0, 1.0), vec3(-1.0, -1.0, 0.0), vec3(4.f, 4.f, 0.f),0.2)); //BLUE
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.0,0.8,0.9), vec3(0.0, -1.0, 1.0), vec3(2.f, -1.6f, 2.f),0.7)); //LIGHT BLUE
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.6, 0.2, 0.1), vec3(0.0, -1.0, 1.0), vec3(-2.f, 1.f, 2.f),0.8)); //BROWN   
-	app->lights.push_back(Light(LightType::LightType_Point, vec3(0.2,0.8,0.2), vec3(0.0, -1.0, 1.0), vec3(6.4f, -0.05f, -2.5f),0.7)); //GREEN
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.9, 0.1), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 3.0f, -0.3f),0.9)); //YELLOW
-	app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.04, 1.0), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 0.86f, -5.6f),0.8)); //ROSE   
-	app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.65,1.0,-0.85), vec3(0.0, -1.0, 1.0), vec3(-3.6f, -0.95f, -4.03f),0.7)); //LIGHT GREEN
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.5, -0.07, 0.23), vec3(0.0, -1.0, 1.0), vec3(4.0f, 1.76f, -6.53f),0.9)); //DARK BLUE
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.52, -0.15), vec3(0.0, -1.0, 1.0), vec3(0.55f, 0.01f, -3.f),0.9)); //ORANGE
-
-    //app->camera.SetPosition();
-
-    //FRAME BUFFER INIT
-    glGenTextures(1, &app->colorController);
-    glBindTexture(GL_TEXTURE_2D, app->colorController);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGenTextures(1, &app->normalsController);
-    glBindTexture(GL_TEXTURE_2D, app->normalsController);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGenTextures(1, &app->depthController);
-    glBindTexture(GL_TEXTURE_2D, app->depthController);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGenTextures(1, &app->albedoController);
-    glBindTexture(GL_TEXTURE_2D, app->albedoController);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGenTextures(1, &app->positionController);
-    glBindTexture(GL_TEXTURE_2D, app->positionController);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glGenFramebuffers(1, &app->frameBufferController);
-    glBindFramebuffer(GL_FRAMEBUFFER, app->frameBufferController);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->colorController, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, app->normalsController, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, app->albedoController, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, app->positionController, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->depthController, 0);
-
-    GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE) {
-        switch (framebufferStatus)
-        {
-        case GL_FRAMEBUFFER_UNDEFINED:                      ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:          ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:  ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
-        case GL_FRAMEBUFFER_UNSUPPORTED:                    ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
-        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:       ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
-        default:                                            ELOG("Unknown franebuffer status error | %i", framebufferStatus);
-        }
-    }
-
-    glDrawBuffers(4, &app->colorController);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    InitTextureBuffers(app);
 
 }
 
@@ -715,6 +621,106 @@ void Render(App* app)
     }
 
 
+}
+
+void CreateAllObjects(App* app)
+{
+    app->model = LoadModel(app, "Patrick/Patrick.obj");
+    app->entities.push_back(Entity(glm::mat4(1.f), app->model));
+    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
+    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
+
+    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, -0.5, 0.0), vec3(0.0, -1.0, 1.0), vec3(0.f, 4.f, 0.f), 0.2)); //RED
+    app->lights.push_back(Light(LightType::LightType_Directional, vec3(0.0, 1.0, 1.0), vec3(-1.0, -1.0, 0.0), vec3(4.f, 4.f, 0.f), 0.2)); //BLUE
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.0, 0.8, 0.9), vec3(0.0, -1.0, 1.0), vec3(2.f, -1.6f, 2.f), 0.7)); //LIGHT BLUE
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.6, 0.2, 0.1), vec3(0.0, -1.0, 1.0), vec3(-2.f, 1.f, 2.f), 0.8)); //BROWN   
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.2, 0.8, 0.2), vec3(0.0, -1.0, 1.0), vec3(6.4f, -0.05f, -2.5f), 0.7)); //GREEN
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.9, 0.1), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 3.0f, -0.3f), 0.9)); //YELLOW
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.04, 1.0), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 0.86f, -5.6f), 0.8)); //ROSE   
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.65, 1.0, -0.85), vec3(0.0, -1.0, 1.0), vec3(-3.6f, -0.95f, -4.03f), 0.7)); //LIGHT GREEN
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.5, -0.07, 0.23), vec3(0.0, -1.0, 1.0), vec3(4.0f, 1.76f, -6.53f), 0.9)); //DARK BLUE
+    app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.52, -0.15), vec3(0.0, -1.0, 1.0), vec3(0.55f, 0.01f, -3.f), 0.9)); //ORANGE
+
+}
+
+void InitTextureBuffers(App* app)
+{
+    glGenTextures(1, &app->colorController);
+    glBindTexture(GL_TEXTURE_2D, app->colorController);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->normalsController);
+    glBindTexture(GL_TEXTURE_2D, app->normalsController);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->depthController);
+    glBindTexture(GL_TEXTURE_2D, app->depthController);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->albedoController);
+    glBindTexture(GL_TEXTURE_2D, app->albedoController);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &app->positionController);
+    glBindTexture(GL_TEXTURE_2D, app->positionController);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenFramebuffers(1, &app->frameBufferController);
+    glBindFramebuffer(GL_FRAMEBUFFER, app->frameBufferController);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, app->colorController, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, app->normalsController, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, app->albedoController, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, app->positionController, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, app->depthController, 0);
+
+    GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE) {
+        switch (framebufferStatus)
+        {
+        case GL_FRAMEBUFFER_UNDEFINED:                      ELOG("GL_FRAMEBUFFER_UNDEFINED"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:          ELOG("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:  ELOG("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"); break;
+        case GL_FRAMEBUFFER_UNSUPPORTED:                    ELOG("GL_FRAMEBUFFER_UNSUPPORTED"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:         ELOG("GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"); break;
+        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:       ELOG("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"); break;
+        default:                                            ELOG("Unknown franebuffer status error | %i", framebufferStatus);
+        }
+    }
+
+    glDrawBuffers(4, &app->colorController);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void RenderCube()

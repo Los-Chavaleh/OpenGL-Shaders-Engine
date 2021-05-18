@@ -302,24 +302,24 @@ vec3 DirectionalLight(Light light, vec3 normal, vec3 view_dir, vec2 texCoords){
     float specularIntensity = pow(max(dot(normal, lightDirection),0.0),0.1);
     vec3 specular = specularStrength * specularIntensity * lightColor * light.intensity;
     
-    return ambient + diffuse + specular;
+    return (ambient + diffuse + specular) * light.intensity;
 }
 
 vec3 PointLight(Light light, vec3 normal, vec3 frag_pos, vec3 view_dir, vec2 texCoords)
 {
     vec3 ambient = light.color;
-    // diffuse shadi
+
     vec3 lightDir = normalize(light.position - frag_pos);
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = ambient * diff;
-     // Specul
+
     vec3 reflectDir = reflect(-lightDir, normal);  
-    float spec = pow(max(dot(view_dir, reflectDir), 0.0), 0.0) * 0.01;//    vec3 specular = vec3(0);
+    float spec = pow(max(dot(view_dir, reflectDir), 0.0), 0.0) * 0.01;
     vec3 specular = ambient * spec;
-    // attenuati
+
     float distance = length(light.position - frag_pos);
-    float attenuation = 1/distance;      
-	return (diffuse + specular) * attenuation * light.intensity;
+    float range = 1/distance;      
+	return (diffuse + specular) * range * light.intensity;
 }
 
 layout(binding = 0, std140) uniform GlobalParms
