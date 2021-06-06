@@ -294,6 +294,30 @@ void Gui(App* app)
 
 	ImGui::Separator();
 
+    static const char* renderModes[] = { "Forward", "Deferred"};
+
+     static int select = 1;
+     ImGui::Text("Shader Mode");
+     if (ImGui::BeginCombo("Mode", renderModes[select])) {
+         for (int i = 0; i < 2; ++i)
+             if (ImGui::Selectable(renderModes[i])) select = i;
+         ImGui::EndCombo();
+     }
+
+     switch (select)
+     {
+     case 0:
+         app->mode = Mode::Mode_Forward;
+         break;
+     case 1:
+         app->mode = Mode::Mode_Deferred;
+         break;
+     default:
+         break;
+     }
+
+    ImGui::Separator();
+
     static int sel = 0;
     ImGui::Text("Target render");
     if (ImGui::BeginCombo("Target", controllers[sel])) {
