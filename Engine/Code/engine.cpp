@@ -276,23 +276,47 @@ void Gui(App* app)
 
 	ImGui::Checkbox("Show Light Gizmo", &app->showGizmo);
 
-	if (ImGui::CollapsingHeader("Light Inspector")) {
-		for (int i = 0; i < app->lights.size(); ++i) {
-			ImGui::PushID(i);
-			if (app->lights[i].type == 0) { //Directional
-				ImGui::DragFloat3("direction", glm::value_ptr(app->lights[i].direction), 0.01f);
-			}
-			else {
-				ImGui::DragFloat3("position", glm::value_ptr(app->lights[i].position), 0.01f);
-			}
-			ImGui::DragFloat3("color", glm::value_ptr(app->lights[i].color), 0.01f);
-			ImGui::DragFloat("intensity", &app->lights[i].intensity, 0.01f);
-			ImGui::PopID();
-			ImGui::NewLine();
-		}
-	}
+    if (ImGui::CollapsingHeader("Light Inspector")) {
+        for (int i = 0; i < app->lights.size(); ++i) {
+            ImGui::PushID(i);
+            if (app->lights[i].type == 0) { //Directional
+                ImGui::DragFloat3("direction", glm::value_ptr(app->lights[i].direction), 0.01f);
+            }
+            else {
+                ImGui::DragFloat3("position", glm::value_ptr(app->lights[i].position), 0.01f);
+            }
+            ImGui::DragFloat3("color", glm::value_ptr(app->lights[i].color), 0.01f);
+            ImGui::DragFloat("intensity", &app->lights[i].intensity, 0.01f);
+            ImGui::PopID();
+            ImGui::NewLine();
+        }
+    }
 
 	ImGui::Separator();
+
+    static const char* renderModes[] = { "Forward", "Deferred" };
+
+    static int select = 1;
+    ImGui::Text("Shader Mode");
+    if (ImGui::BeginCombo("Mode", renderModes[select])) {
+        for (int i = 0; i < 2; ++i)
+            if (ImGui::Selectable(renderModes[i])) select = i;
+        ImGui::EndCombo();
+    }
+
+    switch (select)
+    {
+    case 0:
+        app->mode = Mode::Mode_Forward;
+        break;
+    case 1:
+        app->mode = Mode::Mode_Deferred;
+        break;
+    default:
+        break;
+    }
+
+    ImGui::Separator();
 
     static int sel = 0;
     ImGui::Text("Target render");
@@ -334,58 +358,40 @@ void Update(App* app)
     if (app->input.keys[K_0] == ButtonState::BUTTON_PRESS)
         app->oglInfo.show = !app->oglInfo.show;
 
-	const float cameraSpeed = 2.5f * app->deltaTime; // adjust accordingly
-	if (app->input.keys[K_W] == ButtonState::BUTTON_PRESSED)
-		app->camera.cameraPos += cameraSpeed * app->camera.cameraFront;
-	if (app->input.keys[K_S] == ButtonState::BUTTON_PRESSED)
-		app->camera.cameraPos -= cameraSpeed * app->camera.cameraFront;
-	if (app->input.keys[K_A] == ButtonState::BUTTON_PRESSED)
-		app->camera.cameraPos -= glm::normalize(glm::cross(app->camera.cameraFront, app->camera.cameraUp)) * cameraSpeed;
-	if (app->input.keys[K_D] == ButtonState::BUTTON_PRESSED)
-		app->camera.cameraPos += glm::normalize(glm::cross(app->camera.cameraFront, app->camera.cameraUp)) * cameraSpeed;
-	if (app->input.keys[K_R] == ButtonState::BUTTON_PRESSED) 
-		app->camera.cameraPos += app->camera.cameraUp * 20.f * app->deltaTime;
-	if (app->input.keys[K_F] == ButtonState::BUTTON_PRESSED) 
-		app->camera.cameraPos -= app->camera.cameraUp * 20.f * app->deltaTime;
+    const float cameraSpeed = 2.5f * app->deltaTime; // adjust accordingly
+    if (app->input.keys[K_W] == ButtonState::BUTTON_PRESSED)
+        app->camera.cameraPos += cameraSpeed * app->camera.cameraFront;
+    if (app->input.keys[K_S] == ButtonState::BUTTON_PRESSED)
+        app->camera.cameraPos -= cameraSpeed * app->camera.cameraFront;
+    if (app->input.keys[K_A] == ButtonState::BUTTON_PRESSED)
+        app->camera.cameraPos -= glm::normalize(glm::cross(app->camera.cameraFront, app->camera.cameraUp)) * cameraSpeed;
+    if (app->input.keys[K_D] == ButtonState::BUTTON_PRESSED)
+        app->camera.cameraPos += glm::normalize(glm::cross(app->camera.cameraFront, app->camera.cameraUp)) * cameraSpeed;
+    if (app->input.keys[K_R] == ButtonState::BUTTON_PRESSED)
+        app->camera.cameraPos += app->camera.cameraUp * 20.f * app->deltaTime;
+    if (app->input.keys[K_F] == ButtonState::BUTTON_PRESSED)
+        app->camera.cameraPos -= app->camera.cameraUp * 20.f * app->deltaTime;
 
-	if (app->input.mouseButtons[LEFT] == ButtonState::BUTTON_PRESSED)
-	{
-		app->camera.rotating = true;
+    if (app->input.mouseButtons[LEFT] == ButtonState::BUTTON_PRESSED)
+    {
+        app->camera.rotating = true;
 
-		app->camera.yaw += app->input.mouseDelta.x * app->deltaTime * 20.f;
-		app->camera.pitch -= app->input.mouseDelta.y * app->deltaTime * 20.f;
+        app->camera.yaw += app->input.mouseDelta.x * app->deltaTime * 20.f;
+        app->camera.pitch -= app->input.mouseDelta.y * app->deltaTime * 20.f;
 
-		if (app->camera.pitch > 89.0f)
-			app->camera.pitch = 89.0f;
-		if (app->camera.pitch < -89.0f)
-			app->camera.pitch = -89.0f;
+        if (app->camera.pitch > 89.0f)
+            app->camera.pitch = 89.0f;
+        if (app->camera.pitch < -89.0f)
+            app->camera.pitch = -89.0f;
 
-		
-		/*app->input.mouseDelta.x = xpos - app->input.mousePos.x;
-		app->input.mouseDelta.y = app->input.mousePos.y - ypos;
-		app->input.mousePos.x = xpos;
-		app->input.mousePos.y = ypos;
-
-		app->input.mouseDelta.x *= app->input.sensitivity;
-		app->input.mouseDelta.y *= app->input.sensitivity;
-
-		app->camera.yaw += app->input.mouseDelta.x;
-		app->camera.pitch += app->input.mouseDelta.y;
-
-		if (app->camera.pitch > 89.0f)
-			app->camera.pitch = 89.0f;
-		if (app->camera.pitch < -89.0f)
-			app->camera.pitch = -89.0f;ç*/
-
-		glm::vec3 direction;
-		direction.x = cos(glm::radians(app->camera.yaw)) * cos(glm::radians(app->camera.pitch));
-		direction.y = sin(glm::radians(app->camera.pitch));
-		direction.z = sin(glm::radians(app->camera.yaw)) * cos(glm::radians(app->camera.pitch));
-		app->camera.cameraFront = glm::normalize(direction);
-	}
-	else
-		app->camera.rotating = false;
-
+        glm::vec3 direction;
+        direction.x = cos(glm::radians(app->camera.yaw)) * cos(glm::radians(app->camera.pitch));
+        direction.y = sin(glm::radians(app->camera.pitch));
+        direction.z = sin(glm::radians(app->camera.yaw)) * cos(glm::radians(app->camera.pitch));
+        app->camera.cameraFront = glm::normalize(direction);
+    }
+    else
+        app->camera.rotating = false;
 }
 
 void Render(App* app)
@@ -461,7 +467,9 @@ void Render(App* app)
 
                 AlignHead(app->cBuffer, app->uniformBlockAlignmentOffset);
                 app->entities[i].localParamsOffset = app->cBuffer.head;
-                PushMat4(app->cBuffer, app->entities[i].matrix);
+
+                float angle = 70;
+                PushMat4(app->cBuffer, glm::rotate(glm::scale(app->entities[i].matrix, glm::vec3(2, 2, 2)), glm::radians(angle), glm::vec3(1, 0, 0)));
                 PushMat4(app->cBuffer, app->camera.GetViewMatrix(app->displaySize));
                 app->entities[i].localParamsSize = app->cBuffer.head - app->entities[i].localParamsOffset;
 
@@ -477,7 +485,7 @@ void Render(App* app)
 
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, app->textures[submeshmaterial.albedoTextureIdx].handle);
-                    glUniform1i(app->texturedMeshProgram_uTexture, 0);
+                    glUniform1i(app->texturedMeshProgram_uTextureForward, 0);
 
                     Submesh& submesh = mesh.submeshes[i];
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)submesh.indexOffset);
@@ -492,7 +500,7 @@ void Render(App* app)
         }
         case Mode_Deferred:
         {
-            Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
+            Program& texturedMeshProgram = app->programs[app->texturedMeshProgram2Idx];
             glUseProgram(texturedMeshProgram.handle);
 
             MapBuffer(app->cBuffer, GL_WRITE_ONLY);
@@ -501,6 +509,21 @@ void Render(App* app)
             PushVec3(app->cBuffer, app->camera.cameraPos);
             PushUInt(app->cBuffer, app->lights.size());
             app->globalParamsSize = app->cBuffer.head - app->globalParamsOffset;
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, app->textures[app->toyDiffuseIdx].handle);
+            glUniform1i(app->texturedMeshProgram_uTextureDeferred, 0);
+
+            glActiveTexture(GL_TEXTURE1);
+            glUniform1i(glGetUniformLocation(texturedMeshProgram.handle, "uNormalMapping"), 1);
+            glBindTexture(GL_TEXTURE_2D, app->textures[app->toyNormalIdx].handle);
+            glUniform1i(app->texturedMeshProgram_uTextureRelieveNormal, 1);
+
+            glActiveTexture(GL_TEXTURE2);
+            glUniform1i(glGetUniformLocation(texturedMeshProgram.handle, "uBumpMap"), 1);
+            glBindTexture(GL_TEXTURE_2D, app->textures[app->toyHeightIdx].handle);
+            glUniform1i(app->texturedMeshProgram_uTextureRelieveHeight, 2);
+
             for (int i = 0; i < app->entities.size(); ++i)
             {
                 Model& model = app->models[app->entities[i].modelId];
@@ -508,7 +531,9 @@ void Render(App* app)
 
                 AlignHead(app->cBuffer, app->uniformBlockAlignmentOffset);
                 app->entities[i].localParamsOffset = app->cBuffer.head;
-                PushMat4(app->cBuffer, app->entities[i].matrix);
+                float angle = 70;
+                
+                PushMat4(app->cBuffer, glm::rotate(glm::scale(app->entities[i].matrix, glm::vec3(2,2,2)), glm::radians(angle),glm::vec3(1,0,0)));
                 PushMat4(app->cBuffer, app->camera.GetViewMatrix(app->displaySize));
                 app->entities[i].localParamsSize = app->cBuffer.head - app->entities[i].localParamsOffset;
 
@@ -523,8 +548,18 @@ void Render(App* app)
                     Material& submeshmaterial = app->materials[submeshMaterialIdx];
 
                     glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, app->textures[submeshmaterial.albedoTextureIdx].handle);
-                    glUniform1i(app->programUniformTexture, 0);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[app->toyDiffuseIdx].handle);
+                    glUniform1i(app->texturedMeshProgram_uTextureDeferred, 0);
+
+                    glActiveTexture(GL_TEXTURE1);
+                    glUniform1i(glGetUniformLocation(texturedMeshProgram.handle, "uhasNormalMap"), 1);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[app->toyNormalIdx].handle);
+                    glUniform1i(app->texturedMeshProgram_uTextureRelieveNormal, 1);
+
+                    glActiveTexture(GL_TEXTURE2);
+                    glUniform1i(glGetUniformLocation(texturedMeshProgram.handle, "uhasBumpMap"), 1);
+                    glBindTexture(GL_TEXTURE_2D, app->textures[app->toyHeightIdx].handle);
+                    glUniform1i(glGetUniformLocation(texturedMeshProgram.handle, "uBumpTexture"), 2);
 
                     Submesh& submesh = mesh.submeshes[i];
                     glDrawElements(GL_TRIANGLES, submesh.indices.size(), GL_UNSIGNED_INT, (void*)(u64)submesh.indexOffset);
@@ -609,23 +644,23 @@ void Render(App* app)
 
 void CreateAllObjects(App* app)
 {
-    app->model = LoadModel(app, "Patrick/Patrick.obj");
+    app->model = LoadModel(app, "Cube/Plane.obj");
     app->entities.push_back(Entity(glm::mat4(1.f), app->model));
-    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
-    app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
-	app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-3.f, 0.f, -6.f)), app->model));
-	app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(3.f, 0.f, -6.f)), app->model));
+ //   app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(5.f, 0.f, -4.f)), app->model));
+ //   app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-5.f, 0.f, -2.f)), app->model));
+	//app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(-3.f, 0.f, -6.f)), app->model));
+	//app->entities.push_back(Entity(glm::translate(glm::mat4(1.f), vec3(3.f, 0.f, -6.f)), app->model));
 
-    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, -0.5, 0.0), vec3(0.0, -1.0, 1.0), vec3(0.f, 4.f, 0.f), 0.2)); //RED
-    app->lights.push_back(Light(LightType::LightType_Directional, vec3(0.0, 1.0, 1.0), vec3(-1.0, -1.0, 0.0), vec3(4.f, 4.f, 0.f), 0.2)); //BLUE
+    app->lights.push_back(Light(LightType::LightType_Directional, vec3(1.0, 1.0, 1.0), vec3(0.0, -1.0, 1.0), vec3(0.f, 4.f, 0.f), 0.1)); //RED
+    //app->lights.push_back(Light(LightType::LightType_Directional, vec3(0.0, 1.0, 1.0), vec3(-1.0, -1.0, 0.0), vec3(4.f, 4.f, 0.f), 0.2)); //BLUE
     app->lights.push_back(Light(LightType::LightType_Point, vec3(0.0, 0.8, 0.9), vec3(0.0, -1.0, 1.0), vec3(2.f, -1.6f, 2.f), 0.7)); //LIGHT BLUE
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.6, 0.2, 0.1), vec3(0.0, -1.0, 1.0), vec3(-2.f, 1.f, 2.f), 0.8)); //BROWN   
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(0.2, 0.8, 0.2), vec3(0.0, -1.0, 1.0), vec3(6.4f, -0.05f, -2.5f), 0.7)); //GREEN
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.9, 0.1), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 3.0f, -0.3f), 0.9)); //YELLOW
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.04, 1.0), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 0.86f, -5.6f), 0.8)); //ROSE   
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.65, 1.0, -0.85), vec3(0.0, -1.0, 1.0), vec3(-3.6f, -0.95f, -4.03f), 0.7)); //LIGHT GREEN
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.5, -0.07, 0.23), vec3(0.0, -1.0, 1.0), vec3(4.0f, 1.76f, -6.53f), 2.0)); //DARK BLUE
-    app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.52, -0.15), vec3(0.0, -1.0, 1.0), vec3(0.55f, 0.01f, -3.f), 0.9)); //ORANGE
+    //app->lights.push_back(Light(LightType::LightType_Point, vec3(0.6, 0.2, 0.1), vec3(0.0, -1.0, 1.0), vec3(-2.f, 1.f, 2.f), 0.8)); //BROWN   
+    //app->lights.push_back(Light(LightType::LightType_Point, vec3(0.2, 0.8, 0.2), vec3(0.0, -1.0, 1.0), vec3(6.4f, -0.05f, -2.5f), 0.7)); //GREEN
+    //app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.9, 0.1), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 3.0f, -0.3f), 0.9)); //YELLOW
+    //app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.04, 1.0), vec3(0.0, -1.0, 1.0), vec3(-4.9f, 0.86f, -5.6f), 0.8)); //ROSE   
+    //app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.65, 1.0, -0.85), vec3(0.0, -1.0, 1.0), vec3(-3.6f, -0.95f, -4.03f), 0.7)); //LIGHT GREEN
+    //app->lights.push_back(Light(LightType::LightType_Point, vec3(-0.5, -0.07, 0.23), vec3(0.0, -1.0, 1.0), vec3(4.0f, 1.76f, -6.53f), 2.0)); //DARK BLUE
+    //app->lights.push_back(Light(LightType::LightType_Point, vec3(1.0, 0.52, -0.15), vec3(0.0, -1.0, 1.0), vec3(0.55f, 0.01f, -3.f), 0.9)); //ORANGE
 
 }
 
@@ -650,29 +685,31 @@ void InitModes(App* app)
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxBufferSize);
     app->cBuffer = CreateBuffer(maxBufferSize, GL_UNIFORM_BUFFER, GL_STREAM_DRAW);
 
+    app->toyNormalIdx = LoadTexture2D(app, "Cube/toy_box_normal.png");
+    app->toyHeightIdx = LoadTexture2D(app, "Cube/toy_box_disp.png");
+    app->toyDiffuseIdx = LoadTexture2D(app, "Cube/toy_box_diffuse.png");
+
     // MODES INITIALIZATION
     app->mode = Mode::Mode_Deferred;
-    switch (app->mode)
-    {
-    case Mode::Mode_Forward:
-    {
+
         app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_TEXTURED_MESH");
         Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-        app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
+        app->texturedMeshProgram_uTextureForward = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
         texturedMeshProgram.vertexInputLayout.attributes.push_back({ 0,3 });
         texturedMeshProgram.vertexInputLayout.attributes.push_back({ 1,3 });
         texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2,2 });
-        break;
-    }
-    case Mode::Mode_Deferred:
-    {
+
         //MESH SHADER
-        app->texturedMeshProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_GEOMETRY");
-        Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
-        app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uAlbedoTexture");
-        texturedMeshProgram.vertexInputLayout.attributes.push_back({ 0,3 });
-        texturedMeshProgram.vertexInputLayout.attributes.push_back({ 1,3 });
-        texturedMeshProgram.vertexInputLayout.attributes.push_back({ 2,2 });
+        app->texturedMeshProgram2Idx = LoadProgram(app, "shaders.glsl", "SHOW_GEOMETRY");
+        Program& texturedMeshProgram2 = app->programs[app->texturedMeshProgram2Idx];
+        app->texturedMeshProgram_uTextureDeferred = glGetUniformLocation(texturedMeshProgram2.handle, "uAlbedoTexture");
+        app->texturedMeshProgram_uTextureRelieveNormal = glGetUniformLocation(texturedMeshProgram2.handle, "uNormalTexture");
+        app->texturedMeshProgram_uTextureRelieveHeight = glGetUniformLocation(texturedMeshProgram.handle, "uBumpTexture");
+        texturedMeshProgram2.vertexInputLayout.attributes.push_back({ 0,3 });
+        texturedMeshProgram2.vertexInputLayout.attributes.push_back({ 1,3 });
+        texturedMeshProgram2.vertexInputLayout.attributes.push_back({ 2,2 });
+        texturedMeshProgram2.vertexInputLayout.attributes.push_back({ 3,3 });
+        texturedMeshProgram2.vertexInputLayout.attributes.push_back({ 4,3 });
 
         // LIGHT SHADER
         app->lightsProgramIdx = LoadProgram(app, "shaders.glsl", "SHOW_LIGHT");
@@ -690,9 +727,9 @@ void InitModes(App* app)
         app->drawLightsProgramIdx_uViewProjection = glGetUniformLocation(texturedSphereLightProgram.handle, "projectionView");
         app->drawLightsProgramIdx_uModel = glGetUniformLocation(texturedSphereLightProgram.handle, "model");
         texturedSphereLightProgram.vertexInputLayout.attributes.push_back({ 0, 3 });
-        break;
-    }
-    }
+
+
+
 }
 
 void InitTextureBuffers(App* app)

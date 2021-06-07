@@ -222,6 +222,7 @@ struct App
     // program indices
     u32 texturedGeometryProgramIdx;
     u32 texturedMeshProgramIdx;
+    u32 texturedMeshProgram2Idx;
     u32 meshProgramIdx;
     u32 lightsProgramIdx;
 	u32 drawLightsProgramIdx;
@@ -231,6 +232,10 @@ struct App
     u32 blackTexIdx;
     u32 normalTexIdx;
     u32 magentaTexIdx;
+    u32 toyNormalIdx;
+    u32 toyHeightIdx;
+    u32 toyDiffuseIdx;
+
     u32 model;
     // Mode
     Mode mode;
@@ -242,7 +247,10 @@ struct App
 
     // Location of the texture uniform in the textured quad shader
     GLuint programUniformTexture;
-    GLuint texturedMeshProgram_uTexture;
+    GLuint texturedMeshProgram_uTextureForward;
+    GLuint texturedMeshProgram_uTextureDeferred;
+    GLuint texturedMeshProgram_uTextureRelieveNormal;
+    GLuint texturedMeshProgram_uTextureRelieveHeight;
 
     GLuint texturedMeshProgramIdx_uAlbedo;
     GLuint texturedMeshProgramIdx_uPosition;
