@@ -17,8 +17,8 @@ Github organization: https://github.com/Los-Chavaleh/
 
 Relief vs No Relief
 
-![Relief](Relief.png)
-![NoRelief](NoRelief.png)
+![Relief](Relief.PNG)
+![NoRelief](NoRelief.PNG)
 
 To Enable it, there's a checkbox on the inspector called "Show Relief".
 
@@ -26,4 +26,4 @@ To Enable it, there's a checkbox on the inspector called "Show Relief".
 
 Also you can see the 3D Camera and a comboBox that allows you to see the forward shading.
 
-![ForwardShading](ForwardShading.png)
+![ForwardShading](ForwardShading.PNG)
