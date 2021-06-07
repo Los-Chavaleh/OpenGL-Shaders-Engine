@@ -318,6 +318,10 @@ void Gui(App* app)
 
     ImGui::Separator();
 
+    ImGui::Checkbox("Show Relief", &app->showRelief);
+
+    ImGui::Separator();
+
     static int sel = 0;
     ImGui::Text("Target render");
     if (ImGui::BeginCombo("Target", controllers[sel])) {
@@ -523,6 +527,8 @@ void Render(App* app)
             glUniform1i(glGetUniformLocation(texturedMeshProgram.handle, "uBumpMap"), 1);
             glBindTexture(GL_TEXTURE_2D, app->textures[app->toyHeightIdx].handle);
             glUniform1i(app->texturedMeshProgram_uTextureRelieveHeight, 2);
+
+            glUniform1i(glGetUniformLocation(texturedMeshProgram.handle, "uShowRelief"), app->showRelief);
 
             for (int i = 0; i < app->entities.size(); ++i)
             {

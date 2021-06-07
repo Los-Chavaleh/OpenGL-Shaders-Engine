@@ -249,6 +249,7 @@ uniform sampler2D uNormalTexture;
 
 uniform unsigned int uBumpMapping;
 uniform sampler2D uBumpTexture;
+uniform int uShowRelief;
 
 layout(location = 0) out vec4 oColor;
 layout(location = 1) out vec4 oNormals;
@@ -258,10 +259,14 @@ void main() {
     vec3 normals = vec3(0.0);
     vec2 tCoords = vTexCoord;
 
-    tCoords = reliefMapping(tCoords, vViewDir);
-    normals = texture(uNormalTexture, vTexCoord).rgb;
-    normals = normals * 2.0 - 1.0;
-    normals = normalize(inverse(transpose(TBN)) * normals);
+    if(uShowRelief == 1)
+    {
+        tCoords = reliefMapping(tCoords, vViewDir);
+        normals = texture(uNormalTexture, vTexCoord).rgb;
+        normals = normals * 2.0 - 1.0;
+        normals = normalize(inverse(transpose(TBN)) * normals);
+    }
+
 
 	oColor 		= texture(uAlbedoTexture, tCoords);
 	oNormals 	= vec4(normals, 1.0);

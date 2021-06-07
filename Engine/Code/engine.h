@@ -279,6 +279,8 @@ struct App
     GLuint globalParamsSize;
     int uniformBlockAlignmentOffset;
 	bool showGizmo = true;
+    bool showRelief = true;
+
 };
 
 u32 LoadTexture2D(App* app, const char* filepath);
