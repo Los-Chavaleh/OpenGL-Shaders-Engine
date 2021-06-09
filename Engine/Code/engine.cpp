@@ -519,12 +519,10 @@ void Render(App* app)
             glUniform1i(app->texturedMeshProgram_uTextureDeferred, 0);
 
             glActiveTexture(GL_TEXTURE1);
-            glUniform1i(glGetUniformLocation(texturedMeshProgram.handle, "uNormalMapping"), 1);
             glBindTexture(GL_TEXTURE_2D, app->textures[app->toyNormalIdx].handle);
             glUniform1i(app->texturedMeshProgram_uTextureRelieveNormal, 1);
 
             glActiveTexture(GL_TEXTURE2);
-            glUniform1i(glGetUniformLocation(texturedMeshProgram.handle, "uBumpMap"), 1);
             glBindTexture(GL_TEXTURE_2D, app->textures[app->toyHeightIdx].handle);
             glUniform1i(app->texturedMeshProgram_uTextureRelieveHeight, 2);
 

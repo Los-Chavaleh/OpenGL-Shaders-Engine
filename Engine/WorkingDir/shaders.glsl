@@ -244,10 +244,8 @@ in mat3 worldViewMatrix;
 
 uniform sampler2D uAlbedoTexture;
 
-uniform unsigned int uNormalMapping;
 uniform sampler2D uNormalTexture;
 
-uniform unsigned int uBumpMapping;
 uniform sampler2D uBumpTexture;
 uniform int uShowRelief;
 
